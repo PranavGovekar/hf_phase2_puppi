@@ -1,0 +1,3 @@
+[submodule "correlator-common"]
+	path = correlator-common
+	url = https://gitlab.cern.ch/cms-cactus/phase2/firmware/correlator-common.git

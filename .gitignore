@@ -1,0 +1,13 @@
+*.txt
+*~
+*.log*
+*.swp*
+*.pyc
+__pycache__
+*.dump
+CMSSW_*
+**/proj*/solution
+vivado_hls.app
+project/
+inputs/
+outputs/
