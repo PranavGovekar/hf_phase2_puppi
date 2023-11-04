@@ -26,6 +26,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         -build)
             echo "Setting up Project...."
+            sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
             vitis_hls -f scripts/build.tcl 
             flag_provided=true
             ;;

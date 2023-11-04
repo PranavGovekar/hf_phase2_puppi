@@ -1,4 +1,4 @@
-cd projects 
+cd project
 open_project HF_CSIM
 open_solution "csim_solution" -flow_target vivado
 #csim_design

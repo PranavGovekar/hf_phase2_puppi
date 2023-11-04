@@ -11,3 +11,4 @@ vivado_hls.app
 project/
 inputs/
 outputs/
+correlator-common/
