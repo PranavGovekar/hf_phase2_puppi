@@ -21,17 +21,25 @@ while [[ $# -gt 0 ]]; do
             ;;
         -csyn)
             echo "Running C Synthesis...."
+            date
             vitis_hls -f scripts/run_csynth.tcl 
+            date
             flag_provided=true
             ;;
         -build)
             echo "Setting up Project...."
+            start=`date +%s`
+            git submodule init
+            git submodule update
             sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
             vitis_hls -f scripts/build.tcl 
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
         -rp)
             echo "Synthesis Report"
+            date
             cat projects/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt
             cp projects/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
             flag_provided=true
