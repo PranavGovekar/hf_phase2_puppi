@@ -17,15 +17,21 @@ while [[ $# -gt 0 ]]; do
         -csim)
             echo "Running C Simulation...."
             date
+            start=`date +%s`
             vitis_hls -f scripts/run_csim.tcl 
             date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
         -csyn)
             echo "Running C Synthesis...."
             date
+            start=`date +%s`
             vitis_hls -f scripts/run_csynth.tcl 
             date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
         -build)
