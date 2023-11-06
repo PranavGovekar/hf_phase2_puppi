@@ -16,7 +16,9 @@ while [[ $# -gt 0 ]]; do
     case $key in
         -csim)
             echo "Running C Simulation...."
+            date
             vitis_hls -f scripts/run_csim.tcl 
+            date
             flag_provided=true
             ;;
         -csyn)
@@ -28,11 +30,13 @@ while [[ $# -gt 0 ]]; do
             ;;
         -build)
             echo "Setting up Project...."
+            date
             start=`date +%s`
             git submodule init
             git submodule update
             sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
             vitis_hls -f scripts/build.tcl 
+            date
             end=`date +%s`
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
