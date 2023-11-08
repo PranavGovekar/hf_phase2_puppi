@@ -12,3 +12,4 @@ project/
 inputs/
 outputs/
 correlator-common/
+*.rpt

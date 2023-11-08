@@ -1,11 +1,13 @@
 #!/bin/bash
 
 usage() {
-    echo "Usage: $0 [-csm] [-cyn] [-build] [-rp]"
+    echo "Usage: $0 [OPTIONS]"
+    echo "Options:"
+    echo "  -init   Initialize Submodules"
     echo "  -build  Set up Project"
     echo "  -csim   Run C Simulation"
     echo "  -csyn   Run C Synthesis"
-    echo "  -rp     View Synthesis Report "
+    echo "  -rp     View Synthesis Report"
     exit 1
 }
 
@@ -14,6 +16,13 @@ flag_provided=false
 while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
+        -init)
+            echo "Initializing correlator-common...."
+            date
+            git submodule init
+            git submodule update
+            flag_provided=true
+        ;;
         -csim)
             echo "Running C Simulation...."
             date
@@ -38,8 +47,6 @@ while [[ $# -gt 0 ]]; do
             echo "Setting up Project...."
             date
             start=`date +%s`
-            git submodule init
-            git submodule update
             sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
             vitis_hls -f scripts/build.tcl 
             date
@@ -50,8 +57,8 @@ while [[ $# -gt 0 ]]; do
         -rp)
             echo "Synthesis Report"
             date
-            cat projects/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt
-            cp projects/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
+            cat project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt
+            cp project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
             flag_provided=true
             ;;
         *)

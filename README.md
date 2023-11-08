@@ -8,7 +8,9 @@ If you already have CMSSW setup elsewhere set ``PATH_CMSWS`` in scripts/build.tc
 
 Run ``./run.sh``
 ```
-Usage: ./run.sh [-csm] [-cyn] [-build] [-rp]
+Usage: ./run.sh [OPTIONS]
+Options:
+  -init   Initialize Submodules
   -build  Set up Project
   -csim   Run C Simulation
   -csyn   Run C Synthesis
