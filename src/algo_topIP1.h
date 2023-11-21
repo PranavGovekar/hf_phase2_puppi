@@ -8,21 +8,20 @@
 #include <stdint.h>
 
 #define N_INPUT_LINKS   6
-#define N_OUTPUT_LINKS  6       
+#define N_OUTPUT_LINKS  6
 
 #define N_PF_LINK 8
-#define N_SECTORS 6
+#define N_SECTORS 4
 #define N_PF 48
 
 using namespace std;
-
 typedef ap_uint<10> loop;
 
 class PFcluster{
         public:
-        ap_uint<12> ET;  /* LSB=0.5 GeV */
-        ap_uint<5> Eta;  /* this is Eta in HF coordinates 0 to 11, LSB=0.5 */
-        ap_uint<8> Phi;  /* this is Phi in Calo coordinales 0 to 71, LSB=0.5 */
+        ap_uint<12> ET;
+        ap_uint<5> Eta;
+        ap_uint<8> Phi;
         ap_uint<39> Spare;
         ap_uint<64> all;
 
@@ -34,9 +33,9 @@ class PFcluster{
 
         void getPFcluster(ap_uint<64> i){
         this->ET = i.range(11,0);
-        this->Eta = i.range(16, 12);
-        this->Phi = i.range(24, 17);
-        this->Spare = i.range(63, 25);
+        this->Eta = i.range(16,12);
+        this->Phi = i.range(24,17);
+        this->Spare = i.range(63,25);
         }
 
         void getdata(){
@@ -68,6 +67,4 @@ class PFcluster{
 };
 
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
-
-
 #endif

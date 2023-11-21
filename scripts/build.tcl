@@ -18,8 +18,8 @@ add_files ${TOPDIR}/correlator-common/puppi/firmware/linpuppi_bits.h -cflags "-I
 
 add_files -tb ${TOPDIR}/testbench/algo_top_tb_IP.cpp -cflags "-I${TOPDIR}/src"
 open_solution "csim_solution" -flow_target vivado
-set_part {xcvu13p-flga2577-3-e}
-create_clock -period 10 -name default
+set_part {xcvu13p-flga2577-1-e}
+create_clock -period 2.77 -name default
 
 exit
 
