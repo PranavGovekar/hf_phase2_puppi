@@ -1,4 +1,4 @@
-//#include "linpuppi.h"
+#include "linpuppi.h"
 #include "algo_topIP1.h"
 #include <cstdint>
 
@@ -8,6 +8,8 @@
 void packLinks(l1ct::PuppiObj puppiobjs[N_SECTORS][NNEUTRALS], ap_uint<576> link_out[N_OUTPUT_LINKS] ) {
     #pragma HLS INLINE
     const ap_uint<8> BW = 64;
+    ap_uint<576> temp_link[N_OUTPUT_LINKS] = {0};
+#pragma HLS ARRAY_PARTITION dim=1 type=complete variable=temp_link
     
 pack:
     for(loop i=0; i<N_SECTORS; i++)
@@ -20,9 +22,14 @@ pack:
             ap_uint<5> offset = (i*NNEUTRALS+k) % N_PUPPI_LINK;
             ap_uint<12> start = offset*BW;
 
-            link_out[i_link].range(start+BW,start) = puppiobjs[i][k].pack();
+            temp_link[i_link].range(start+BW,start) = puppiobjs[i][k].pack();
         }
     }
+//    std::copy(std::begin(temp_link), std::end(temp_link), std::begin(link_out));
+    memcopy: for(loop i=0; i<N_OUTPUT_LINKS; i++){
+#pragma HLS UNROLL
+    	link_out[i] = temp_link[i];
+	}
 }
 
 void unpackLinks( const ap_uint<576> link_in[N_INPUT_LINKS] , 
@@ -223,15 +230,15 @@ hadcalo_init:
 puppi:
     for(loop i=0; i<N_SECTORS; i++) {
      #pragma HLS unroll
-//         fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
+         fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
 //  proxy for puppi
-      proxyLoop :  for(loop j=0; j<NNEUTRALS ;j++)
-        {
-	   #pragma HLS unroll
-            pfselne[i][j].hwPt  = H_in_regionized[i][j].hwPt  ;
-            pfselne[i][j].hwEta = region[i].hwGlbEta( H_in_regionized[i][j].hwEta );
-            pfselne[i][j].hwPhi = region[i].hwGlbPhi(H_in_regionized[i][j].hwPhi );
-        }
+//      proxyLoop :  for(loop j=0; j<NNEUTRALS ;j++)
+//        {
+//	   #pragma HLS unroll
+//            pfselne[i][j].hwPt  = H_in_regionized[i][j].hwPt  ;
+//            pfselne[i][j].hwEta = region[i].hwGlbEta( H_in_regionized[i][j].hwEta );
+//            pfselne[i][j].hwPhi = region[i].hwGlbPhi(H_in_regionized[i][j].hwPhi );
+//        }
 
 
     }
