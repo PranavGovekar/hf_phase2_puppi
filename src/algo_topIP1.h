@@ -14,6 +14,14 @@
 #include "../../dataformats/layer1_multiplicities.h"
 #include "linpuppi_bits.h"
 
+//-for-streaming-interface---------------------//
+#include "hls_stream.h"                        //
+#include "ap_axi_sdata.h"                      //
+#define N_WORDS 9                              // 
+#define BIT_WIDTH 64                           //
+typedef ap_axis <BIT_WIDTH,0,0,1> axi_stream;  //
+//---------------------------------------------//
+
 #define N_INPUT_LINKS   6
 #define N_OUTPUT_LINKS  6
 
@@ -21,10 +29,6 @@
 #define N_PUPPI_LINK 8
 #define N_SECTORS 6
 #define N_PF 48
-
-// Needed for the local regionizer workflow
-#define NCALO 12
-#define NNEUTRALS 8
 
 using namespace std;
 typedef ap_uint<10> loop;
@@ -80,4 +84,22 @@ public:
 };
 
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
+
+
+void AXIStream_wrapper(
+    hls::stream<axi_stream> &inputStream0,
+    hls::stream<axi_stream> &inputStream1,
+    hls::stream<axi_stream> &inputStream2,
+    hls::stream<axi_stream> &inputStream3,
+    hls::stream<axi_stream> &inputStream4,
+    hls::stream<axi_stream> &inputStream5,
+
+    hls::stream<axi_stream> &outputStream0,
+    hls::stream<axi_stream> &outputStream1,
+    hls::stream<axi_stream> &outputStream2,
+    hls::stream<axi_stream> &outputStream3,
+    hls::stream<axi_stream> &outputStream4,
+    hls::stream<axi_stream> &outputStream5
+    );
+
 #endif
