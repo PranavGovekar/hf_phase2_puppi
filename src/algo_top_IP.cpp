@@ -34,7 +34,7 @@ pack:
     }
     
 memcopy: 
-    for(loop i=0; i<N_OUTPUT_LINKS; i++){Z
+    for(loop i=0; i<N_OUTPUT_LINKS; i++){
     #pragma HLS UNROLL
 
     	link_out[i] = temp_link[i];
@@ -265,15 +265,13 @@ void stream_in(
     ap_uint<576> tempLink;
     ap_uint<BIT_WIDTH> tempArray[N_WORDS];
     ap_uint<12> start = 0;
-    loop count = 0;
 
-
-    do {
+    for(loop i=0; i<N_WORDS; i++) {
         buffer = inputStream.read();
         tempLink.range(start+(BIT_WIDTH-1),start) = buffer.data;
 
         #ifdef DEBUGME
-        std::cout << "count : " << count;
+
         std::cout << "in_stream buff :" << buffer.data << endl;
         std::cout << "in_stream buff :" << tempLink.range(start+(BIT_WIDTH-1),start) << endl;
         std::cout << "tempLink inside stream_in : " << std::bitset<64>(tempLink.range(start+(BIT_WIDTH-1),start)) << endl;
@@ -282,13 +280,10 @@ void stream_in(
         
         start = start + BIT_WIDTH;
 
-        if(count == N_WORDS-1){
-            count = 0;
+        if(i == N_WORDS-1){
             start = 0;
         }
-        count++;
     }
-    while (!buffer.last);
 
     #ifdef DEBUGME
     std::cout << "tempLink inside stream_in : " << std::bitset<576>(tempLink) << endl;
@@ -360,7 +355,7 @@ void AXIStream_wrapper(
     ) {
 
 #pragma HLS INTERFACE mode=ap_ctrl_hs port=return
-// #pragma HLS DATAFLOW
+#pragma HLS DATAFLOW
 #pragma HLS INTERFACE mode=axis register_mode=both port=inputStream0 register
 #pragma HLS INTERFACE mode=axis register_mode=both port=inputStream1 register
 #pragma HLS INTERFACE mode=axis register_mode=both port=inputStream2 register
@@ -384,11 +379,11 @@ void AXIStream_wrapper(
     stream_in(inputStream4, &link_in[4]);
     stream_in(inputStream5, &link_in[5]);
 
-    algo_topIP1(link_in, link_out);
+     algo_topIP1(link_in, link_out);
 
-//    for(loop i=0; i<6; i++) {
-//    	link_out[i] = link_in[i];
-//    }
+//   for(loop i=0; i<6; i++) {
+//   	link_out[i] = link_in[i];
+//   }
 
     stream_out(outputStream0, &link_out[0]);
     stream_out(outputStream1, &link_out[1]);
