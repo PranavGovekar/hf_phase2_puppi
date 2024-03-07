@@ -22,10 +22,6 @@
 #define N_SECTORS 6
 #define N_PF 48
 
-// Needed for the local regionizer workflow
-#define NCALO 12
-#define NNEUTRALS 8
-
 using namespace std;
 typedef ap_uint<10> loop;
 
