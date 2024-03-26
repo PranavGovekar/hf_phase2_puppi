@@ -214,19 +214,18 @@ regions_init:
 
 
     // initialize the neutral hadron objects
-hadcalo_init:
-    for( loop  i= 0; i < N_SECTORS; i++) {
-    #pragma HLS unroll
-        for( loop j = 0; j < NCALO ; j++) {
-        #pragma HLS unroll
-            H_in_regionized[i][j].clear();
-        }
-    }
+//hadcalo_init:
+//    for( loop  i= 0; i < N_SECTORS; i++) {
+//    #pragma HLS unroll
+//        for( loop j = 0; j < NCALO ; j++) {
+//        #pragma HLS unroll
+//            H_in_regionized[i][j].clear();
+//        }
+//    }
 
     // unpack and regionize the PF Clusters to the neutral hadron objects
     
     unpackLinksToHadCalo(link_in, H_in_regionized, region);
-
 
     // invoke puppi for the regionized clusters
 puppi:
