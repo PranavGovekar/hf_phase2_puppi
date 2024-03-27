@@ -1,5 +1,5 @@
 set TOPDIR [pwd]
-set PATH_CMSWS "/home/pranav/CMSSW_12_5_2_patch1/src"
+set PATH_CMSWS "/home/bitsmith/CMSSW/CMSSW_12_5_2_patch1/src"
 
 if { $PATH_CMSWS == "" } {
 	set PATH_CMSWS "${TOPDIR}/correlator-common/CMSSW_12_5_2_patch1/src"

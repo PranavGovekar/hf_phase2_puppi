@@ -7,6 +7,7 @@ usage() {
     echo "  -build  Set up Project"
     echo "  -csim   Run C Simulation"
     echo "  -csyn   Run C Synthesis"
+    echo "  -rsyn   Run RTL Synthesis"
     echo "  -rp     View Synthesis Report"
     exit 1
 }
@@ -38,6 +39,16 @@ while [[ $# -gt 0 ]]; do
             date
             start=`date +%s`
             vitis_hls -f scripts/run_csynth.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+        -rsyn)
+            echo "Running RTL Synthesis...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/run_rsynth.tcl 
             date
             end=`date +%s`
             echo Execution time was `expr $end - $start` seconds.
