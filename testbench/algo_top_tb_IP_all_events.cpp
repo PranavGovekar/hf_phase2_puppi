@@ -25,6 +25,7 @@ int main() {
             std::cout << "error: file open failed | probably you don't have input files ಠ_ಠ" << "\n";
             return 1;
         }
+	std::cout<<"Opening file : "<<filename<<"\n";
 
         string data;
         int lineNum = 0;
