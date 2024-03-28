@@ -6,7 +6,7 @@
 #include <algorithm>
 #include <utility>
 #include <stdint.h>
-
+#include <hls_stream.h>
 
 #include "DataFormats/L1TParticleFlow/interface/layer1_objs.h"
 #include "DataFormats/L1TParticleFlow/interface/pf.h"
@@ -76,4 +76,39 @@ public:
 };
 
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
+
+void compute(const ap_uint<576> &link_center,
+			const ap_uint<576> &link_left,
+			const ap_uint<576> &link_right,
+			const l1ct::PFRegion &region,
+			ap_uint<576> &link_out);
+
+void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out);
+
+void fill(hls::stream<l1ct::HadCaloObj> &mainStream,
+		hls::stream<l1ct::HadCaloObj> &extraStream,
+		l1ct::HadCaloObj puppiIn[NCALO]);
+
+void fillCenterLink(const ap_uint<576> &link,
+					const l1ct::PFRegion &region,
+					hls::stream<l1ct::HadCaloObj> &mainStream);
+
+void fillExtra(	const ap_uint<576> &link_left,
+				const ap_uint<576> &link_right,
+				const l1ct::PFRegion &region,
+				const int N_REGION,
+				hls::stream<l1ct::HadCaloObj> &extraStream);
+
+void merge(	hls::stream<l1ct::HadCaloObj> &leftStream,
+			hls::stream<l1ct::HadCaloObj> &rightStream,
+			hls::stream<l1ct::HadCaloObj> &extraStream);
+
+void getStream(const ap_uint<576> &link,
+				const int &phi_offset,
+				const l1ct::PFRegion &region,
+				hls::stream<l1ct::HadCaloObj> &outstream);
+
+//void clearStream(hls::stream<l1ct::HadCaloObj> &stream);
+
 #endif
