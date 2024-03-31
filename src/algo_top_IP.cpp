@@ -132,10 +132,12 @@ sector_loop:
 	else if(  i==(N_SECTORS-1) and    lnkR==0       ) phi_offsetR-=72;
 
      link_loop_per_sector:
-	while( nClusterInRegion[i] < NCALO)
+      for(int kk=0;kk< N_PF_LINK*2; kk++)
 	{
 	//#pragma HLS loop_tripcount max=16
 		// TODO SET THE MAX TRIP COUNT
+		if ( (idxR >= N_PF_LINK) and ( idxL >= N_PF_LINK)) break;
+		if(nClusterInRegion[i] >= NCALO ) break;
 		bool isLCand=false;
 		if (idxL < N_PF_LINK)
 		{
@@ -220,8 +222,6 @@ sector_loop:
 	                  idxL++;
 	                  idxR++;
 		}
-		if ( (idxR >= N_PF_LINK) and ( idxL >= N_PF_LINK))
-			break;
 	}
     }
 
@@ -341,6 +341,19 @@ hadcalo_init:
     unpackLinksToHadCalo(link_in, H_in_regionized, region);
 
     // invoke puppi for the regionized clusters
+    for( loop i=0 ;i < N_SECTORS ; i++)
+    {
+        for( loop j=0 ;j < NCALO ; j++)
+         {
+             std::cout<<"HCALOobj "<<i<<" , "<<j
+              <<" : phi "<<H_in_regionized[i][j].hwPhi
+              <<" : eta "<<H_in_regionized[i][j].hwEta
+              <<" : et  "<<H_in_regionized[i][j].hwPt
+              <<"\n";
+
+         }
+    }
+
 
     compute(pfselne, H_in_regionized, region);
 
