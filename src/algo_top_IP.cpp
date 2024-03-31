@@ -2,22 +2,24 @@
 #include "algo_topIP1.h"
 #include <cstdint>
 
+#ifdef __SYNTHESIS__
 //#define DEBUGME
-
+#endif
 void packLinks( 
     l1ct::PuppiObj puppiobjs[N_SECTORS][NNEUTRALS] , 
     ap_uint<576> link_out[N_OUTPUT_LINKS] 
     ) { // packs the puppi objects to the output links
-#pragma HLS INLINE
+//#pragma HLS INLINE
+#pragma HLS INTERFACE ap_ctrl_hs port=return
 
     const ap_uint<8> BW = 64;
     ap_uint<576> temp_link[N_OUTPUT_LINKS] = {0};
-    #pragma HLS ARRAY_PARTITION dim=1 type=complete variable=temp_link
+//    #pragma HLS ARRAY_PARTITION dim=1 type=complete variable=temp_link
 pack:
     for(loop i=0; i<N_SECTORS; i++) {
-    #pragma HLS unroll
+  //  #pragma HLS unroll
         for(loop k=0; k<NNEUTRALS; k++) {
-        #pragma HLS unroll
+    //    #pragma HLS unroll
             ap_uint<6> i_link = (i*NNEUTRALS+k)/N_PUPPI_LINK;
             ap_uint<5> offset = (i*NNEUTRALS+k) % N_PUPPI_LINK;
             ap_uint<12> start = offset*BW;
@@ -28,14 +30,14 @@ pack:
     
 memcopy: 
     for(loop i=0; i<N_OUTPUT_LINKS; i++){
-    #pragma HLS UNROLL
+   // #pragma HLS UNROLL
 
     	link_out[i] = temp_link[i];
 	}
 }
 
 void unpackLinks( 
-    const ap_uint<576> link_in[N_INPUT_LINKS] , 
+    ap_uint<576> link_in[N_INPUT_LINKS] , 
     ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ,
     ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] , 
     ap_int<9>   PHI[N_INPUT_LINKS][N_PF_LINK] 
@@ -47,7 +49,7 @@ unpack_link_linkLoop:
         ap_uint<576> word= link_in[i];
         unpack_link_objLoop : 
             for(loop j=0; j<N_PF_LINK; j++) {
-            #pragma HLS PIPELINE II=1
+ //           #pragma HLS PIPELINE II=1
                 etW :     ET[i][j]     = word.range(11,0);
                 etaW:    ETA[i][j]     = word.range(16,12);
                 phiW:    PHI[i][j]     = word.range(24,17);
@@ -60,21 +62,24 @@ unpack_link_linkLoop:
                 #endif
         }
     }
-
 }
 
 void regionizeToHCALObjects(
-    const ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ,
-    const ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] ,
-    const ap_int<9>   Phi[N_INPUT_LINKS][N_PF_LINK] ,
-    const l1ct::PFRegion region[N_SECTORS],
+     ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ,
+     ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] ,
+     ap_int<9>   Phi[N_INPUT_LINKS][N_PF_LINK] ,
+     l1ct::PFRegion region[N_SECTORS],
     l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO]
     ) { 
-#pragma HLS INLINE off
+#pragma HLS INLINE 
+//#pragma HLS ARRAY_PARTITION variable=ET dim=1
+//#pragma HLS ARRAY_PARTITION variable=ETA dim=1
+//#pragma HLS ARRAY_PARTITION variable=Phi dim=1
+//#pragma HLS ARRAY_PARTITION variable=region dim=0
 
-const uint8_t NLINKS_TO_SCAN(3);
+#define NLINKS_TO_SCAN 3
 
-const ap_uint<4> REGION_TO_LINK_MAP[N_SECTORS][NLINKS_TO_SCAN]={
+ ap_uint<4> REGION_TO_LINK_MAP[N_SECTORS][NLINKS_TO_SCAN]={
     {0,1,5},
     {1,2,0},
     {2,3,1},
@@ -157,7 +162,7 @@ sector_loop:
 		}
 
 		bool isRCand=false;
-		if (isRCand < N_PF_LINK)
+		if (idxR < N_PF_LINK)
 		{
 			local_phiR = Phi[lnkR][idxR]-  phi_offsetR;
 			local_etaR = ETA[lnkR][idxR]-region[i].hwEtaCenter;
@@ -245,13 +250,25 @@ sector_loop:
 void compute(
 		l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS],
 		l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO],
-		const l1ct::PFRegion region[N_SECTORS]
+		l1ct::PFRegion region[N_SECTORS]
 		){
-# pragma HLS INLINE off
+//#pragma HLS PIPELINE
+#pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=0
+#pragma HLS ARRAY_PARTITION variable=pfselne complete dim=0
+#pragma HLS ARRAY_PARTITION variable=region complete dim=0
 	puppi:
 	    for(loop i=0; i<N_SECTORS; i++) {
-	         fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
+		#pragma HLS unroll factor=2 skip_exit_check 
+	        //#pragma HLS LATENCY max=2 min=2
+	//        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
+   proxyLoop :  for(loop j=0; j<NNEUTRALS ;j++)
+	        	{
+	        	    pfselne[i][j].hwPt  = H_in_regionized[i][j].hwPt  ;
+	        	    pfselne[i][j].hwEta = region[i].hwGlbEta( H_in_regionized[i][j].hwEta );
+	        	    pfselne[i][j].hwPhi = region[i].hwGlbPhi(H_in_regionized[i][j].hwPhi );
+	        	}
 	    }
+
    #ifdef DEBUGME    
    for( loop i=0 ;i < N_SECTORS ; i++)
    {
@@ -266,23 +283,20 @@ void compute(
         }
    }
    #endif
-	
-
-
 
 }
 
 // Unpacks the
 void unpackLinksToHadCalo(
-    const ap_uint<576> link_in[N_INPUT_LINKS] ,
+     ap_uint<576> link_in[N_INPUT_LINKS] ,
     l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO], 
-    const l1ct::PFRegion region[N_SECTORS]
+     l1ct::PFRegion region[N_SECTORS]
     ) {
 
 #pragma HLS INLINE off
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=0
-
+#pragma HLS ARRAY_PARTITION variable=region complete dim=0
     ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ;
     ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] ;
     ap_int<9>   PHI[N_INPUT_LINKS][N_PF_LINK] ;
@@ -292,23 +306,21 @@ void unpackLinksToHadCalo(
 #pragma HLS ARRAY_PARTITION variable=PHI dim=0
     fCall_unpackLink : unpackLinks(link_in , ET, ETA, PHI) ;
     fCall_regionizer : regionizeToHCALObjects( ET, ETA , PHI, region,H_in_regionized) ;
-
 }
 
 void algo_topIP1(
     ap_uint<576> link_in[N_INPUT_LINKS],
     ap_uint<576> link_out[N_OUTPUT_LINKS]
     ) {
-#pragma HLS PIPELINE II=8
-
+#pragma HLS PIPELINE 
     l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS];
     l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO];
 
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS INTERFACE ap_ctrl_hs port=return
-#pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=0
-#pragma HLS ARRAY_PARTITION variable=pfselne complete dim=0
+#pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=1
+#pragma HLS ARRAY_PARTITION variable=pfselne complete dim=1
 
     ap_uint<12> start, end;
 
@@ -323,8 +335,6 @@ regions_init:
         region[i].hwPhiHalfWidth = l1ct::phi_t(6);
         region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
     }
-
-
 
     // initialize the neutral hadron objects
 hadcalo_init:
@@ -341,6 +351,7 @@ hadcalo_init:
     unpackLinksToHadCalo(link_in, H_in_regionized, region);
 
     // invoke puppi for the regionized clusters
+   #ifdef DEBUGME    
     for( loop i=0 ;i < N_SECTORS ; i++)
     {
         for( loop j=0 ;j < NCALO ; j++)
@@ -353,11 +364,10 @@ hadcalo_init:
 
          }
     }
+   #endif
 
 
     compute(pfselne, H_in_regionized, region);
-
-
     // pack the puppi outputs into links
     packLinks(pfselne, link_out);
 }

@@ -1,5 +1,5 @@
 cd project
-open_project HF_CSIM
+open_project HF_algotop
 open_solution "csim_solution" -flow_target vivado
 #csim_design
 csynth_design

@@ -8,7 +8,11 @@ if { $PATH_CMSWS == "" } {
 file mkdir project
 cd project
 
-open_project HF_CSIM
+open_project HF_algotop
+set_top algo_topIP1
+set_top packLinks
+set_top unpackLinks
+set_top compute
 set_top algo_topIP1
 add_files ${TOPDIR}/src/algo_topIP1.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware" 
 add_files ${TOPDIR}/src/algo_top_IP.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware"
