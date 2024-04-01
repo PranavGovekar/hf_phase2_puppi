@@ -8,7 +8,7 @@ if { $PATH_CMSWS == "" } {
 file mkdir project
 cd project
 
-open_project HF_algotop
+open_project HF_algotopMultiCopy
 set_top algo_topIP1
 set_top packLinks
 set_top unpackLinks

@@ -1,6 +1,6 @@
 file mkdir outputs
 cd project
-open_project HF_algotop
+open_project HF_algotopMultiCopy
 open_solution "csim_solution" -flow_target vivado
 csim_design
 #csynth_design

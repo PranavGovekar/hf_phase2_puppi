@@ -35,7 +35,10 @@ while [[ $# -gt 0 ]]; do
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
-        -csyn)
+        -csyn)    
+	    echo "Copying the codes for provenenace ! "
+            mkdir -p  project/HF_algotopMultiCopy/code
+	    cp -r src/* project/HF_algotopMultiCopy/code
             echo "Running C Synthesis...."
             date
             start=`date +%s`
@@ -79,8 +82,8 @@ while [[ $# -gt 0 ]]; do
         -rp)
             echo "Synthesis Report"
             date
-            cat project/HF_algotop/csim_solution/syn/report/algo_topIP1_csynth.rpt
-            cp project/HF_algotop/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
+            cat project/HF_algotopMultiCopy/csim_solution/syn/report/algo_topIP1_csynth.rpt
+            cp project/HF_algotopMultiCopy/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
             flag_provided=true
             ;;
         *)

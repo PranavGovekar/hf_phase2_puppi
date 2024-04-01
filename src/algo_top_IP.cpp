@@ -1,6 +1,7 @@
 #include "linpuppi.h"
 #include "algo_topIP1.h"
 #include <cstdint>
+#define NLINKS_TO_SCAN 3
 
 #ifdef __SYNTHESIS__
 //#define DEBUGME
@@ -10,7 +11,6 @@ void packLinks(
     ap_uint<576> link_out[N_OUTPUT_LINKS] 
     ) { // packs the puppi objects to the output links
 //#pragma HLS INLINE
-#pragma HLS INTERFACE ap_ctrl_hs port=return
 
     const ap_uint<8> BW = 64;
     ap_uint<576> temp_link[N_OUTPUT_LINKS] = {0};
@@ -38,56 +38,56 @@ memcopy:
 
 void unpackLinks( 
     ap_uint<576> link_in[N_INPUT_LINKS] , 
-    ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ,
-    ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] , 
-    ap_int<9>   PHI[N_INPUT_LINKS][N_PF_LINK] 
+    ap_uint<12>  ET[N_SECTORS][3][N_PF_LINK] ,
+    ap_int<9>  ETA[N_SECTORS][3][N_PF_LINK] , 
+    ap_int<9>   PHI[N_SECTORS][3][N_PF_LINK] ,
+    l1ct::PFRegion region[N_SECTORS],
+    ap_uint<4> REGION_TO_LINK_MAP[N_SECTORS][NLINKS_TO_SCAN]
     ) { // unpacks the puppi objects from the input links
+#pragma HLS ARRAY_PARTITION variable=REGION_TO_LINK_MAP dim=0
 #pragma HLS INLINE
 unpack_link_linkLoop:
-    for(loop i=0; i<N_INPUT_LINKS; i++) {
+    for(loop i=0; i<N_SECTORS; i++) {
     #pragma HLS unroll   
-        ap_uint<576> word= link_in[i];
+      ap_uint<4> idxMain=REGION_TO_LINK_MAP[i][0];
+      ap_int<9> eta_offset=region[i].hwEtaCenter;
+      ap_int<9> phi_offset=region[i].hwPhiCenter;
+      for(loop k=0;k<NLINKS_TO_SCAN ; k++)
+      { 
+	ap_uint<4> idx=REGION_TO_LINK_MAP[i][k];
+	if(idxMain==0 and idx==N_INPUT_LINKS-1) phi_offset=region[i].hwPhiCenter+72;
+	if(idx==0 and idxMain==N_INPUT_LINKS-1) phi_offset=region[i].hwPhiCenter-72;
+        ap_uint<576> word=link_in[idx];
         unpack_link_objLoop : 
             for(loop j=0; j<N_PF_LINK; j++) {
  //           #pragma HLS PIPELINE II=1
-                etW :     ET[i][j]     = word.range(11,0);
-                etaW:    ETA[i][j]     = word.range(16,12);
-                phiW:    PHI[i][j]     = word.range(24,17);
+                etW :     ET[i][k][j]     = word.range(11,0);
+                etaW:    ETA[i][k][j]     = word.range(16,12) - eta_offset;
+                phiW:    PHI[i][k][j]     = word.range(24,17) - phi_offset;
                 bShift:    word=word>>64;
                 #ifdef DEBUGME    
-                std::cout<<"Unpacked object : i,j == "<<i<<","<<j<<" : "
+                std::cout<<"Unpacked object : i,k,j == "<<i<<","<<k<<" ["<<idx<<"] <<","<<j<<" : "
                         << "et  "<< ET[i][j]<<" | "
                         << "eta "<<ETA[i][j]<<" | "
                         << "phi "<<PHI[i][j]<<" \n";
                 #endif
         }
+      }
     }
 }
 
 void regionizeToHCALObjects(
-     ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ,
-     ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] ,
-     ap_int<9>   Phi[N_INPUT_LINKS][N_PF_LINK] ,
+     ap_uint<12>  ET[N_SECTORS][NLINKS_TO_SCAN][N_PF_LINK] ,
+     ap_int<9>  ETA[N_SECTORS][NLINKS_TO_SCAN][N_PF_LINK] ,
+     ap_int<9>   Phi[N_SECTORS][NLINKS_TO_SCAN][N_PF_LINK] ,
      l1ct::PFRegion region[N_SECTORS],
-    l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO]
+     l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO]
     ) { 
 #pragma HLS INLINE 
 //#pragma HLS ARRAY_PARTITION variable=ET dim=1
 //#pragma HLS ARRAY_PARTITION variable=ETA dim=1
 //#pragma HLS ARRAY_PARTITION variable=Phi dim=1
 //#pragma HLS ARRAY_PARTITION variable=region dim=0
-
-#define NLINKS_TO_SCAN 3
-
- ap_uint<4> REGION_TO_LINK_MAP[N_SECTORS][NLINKS_TO_SCAN]={
-    {0,1,5},
-    {1,2,0},
-    {2,3,1},
-    {3,4,2},
-    {4,5,3},
-    {5,0,4}
-    };
-#pragma HLS ARRAY_PARTITION variable=REGION_TO_LINK_MAP dim=0
 
 int nClusterInRegion[N_SECTORS] ; // can be changed to uint4
 #pragma HLS ARRAY_PARTITION variable=nClusterInRegion dim=0
@@ -105,36 +105,31 @@ sector_loop:
                 <<" [ "<<region[i].hwPhiCenter<<"+/-"<< region[i].hwPhiHalfWidth <<"] "<<"\n";
 		#endif
 	
-	const loop lnk1 = REGION_TO_LINK_MAP[i][0];
+	//const loop lnk1 = REGION_TO_LINK_MAP[i][0];
     central_link_loop_per_sector:
 	for(loop k=0; k < N_PF_LINK ; k++)
 	{
-		localEta_def_subs :	ap_int<9>  local_eta = ETA[lnk1][k]-  region[i].hwEtaCenter;
-		localPhi_def_sum  :	ap_int<9>  local_phi = Phi[lnk1][k]-  region[i].hwPhiCenter;
-					ap_int<12> local_et  =  ET[lnk1][k];
-		HCALObjWriteEta :       H_in_regionized[i][k].hwEta = local_eta;
-		HCALObjWritePhi :       H_in_regionized[i][k].hwPhi = local_phi;
-		HCALObjWriteEt  :       H_in_regionized[i][k].hwPt =  ET[lnk1][k];
+		HCALObjWriteEta :       H_in_regionized[i][k].hwEta = ETA[i][0][k];
+		HCALObjWritePhi :       H_in_regionized[i][k].hwPhi = Phi[i][0][k];
+		HCALObjWriteEt  :       H_in_regionized[i][k].hwPt  =  ET[i][0][k];
 	
 			#ifdef DEBUGME
 			std::cout<<"  > Adding the def. i,j : "<<i<<","<<k<<" : "
-					<<"("<<Phi[lnk1][k]<<"->"<<local_phi<<", "<<ETA[lnk1][k]<<"->"<<local_eta<<"   et : "<<local_et
-					<<" ) is inside region "<<i<<" : "<<region[i].isInside(local_eta, local_phi)
+					<<" -( phi "<H_in_regionized[i][k].hwPhi<<" , eta "<<H_in_regionized[i][k].hwEta<<"   et : "<<H_in_regionized[i][k].hwPt
+					//<<" ) is inside region "<<i<<" : "<<region[i].isInside(local_eta, local_phi)
 					<<"\n" ;
 			#endif
 	}
 	
-	const loop lnkL = REGION_TO_LINK_MAP[i][1];
-	const loop lnkR = REGION_TO_LINK_MAP[i][2];
-	 loop idxL(0),idxR(0);
-	int phi_offsetL=region[i].hwPhiCenter;
-	int phi_offsetR=region[i].hwPhiCenter;
+	const loop lnkL =1 ; // REGION_TO_LINK_MAP[i][1];
+	const loop lnkR =2 ; // REGION_TO_LINK_MAP[i][2];
+	loop idxL(0),idxR(0);
 	int hid;
-	ap_int<9> local_etaR,local_phiR;		
-	ap_int<9> local_etaL,local_phiL;		
-        ap_uint<12> local_etR,local_etL;
-	if     (  i==0   and    lnkL==(N_INPUT_LINKS-1) ) phi_offsetL+=72;
-	else if(  i==(N_SECTORS-1) and    lnkR==0       ) phi_offsetR-=72;
+	//ap_int<9> local_etaR,local_phiR;		
+	//ap_int<9> local_etaL,local_phiL;		
+        //ap_uint<12> local_etR,local_etL;
+	//if     (  i==0   and    lnkL==(N_INPUT_LINKS-1) ) phi_offsetL+=72;
+	//else if(  i==(N_SECTORS-1) and    lnkR==0       ) phi_offsetR-=72;
 
      link_loop_per_sector:
       for(int kk=0;kk< N_PF_LINK*2; kk++)
@@ -146,34 +141,33 @@ sector_loop:
 		bool isLCand=false;
 		if (idxL < N_PF_LINK)
 		{
-			local_phiL = Phi[lnkL][idxL]-  phi_offsetL;
-			local_etaL = ETA[lnkL][idxL]-region[i].hwEtaCenter;
-			local_etL  = ET[lnkL][idxL] ;
-			
 			#ifdef DEBUGME
+			local_phiL = Phi[i][lnkL][idxL] ;
+			local_etaL = ETA[i][lnkL][idxL];
+			local_etL  = ET[i][lnkL][idxL] ;
+			
 			std::cout<<"  > Checking L(r"<<i<<",l"<<lnkL<<",p"<<lnkL<<") : "
-					<<"("<<Phi[lnkL][idxL]<<"->"<<local_phiL<<", "<<ETA[lnkL][idxL]<<"->"<<local_etaL<<"   et : "<<local_etL
+					<<"("<<Phi[i][lnkL][idxL]<<"->"<<local_phiL<<", "<<ETA[i][lnkL][idxL]<<"->"<<local_etaL<<"   et : "<<local_etL
 					<<" ) is inside region "<<i<<" : "<<region[i].isInside(local_etaL, local_phiL)
 					<<"\n" ;
 			#endif
-
-			if( region[i].isInside(local_etaL, local_phiL ) )
+			if( region[i].isInside(ETA[i][lnkL][idxL], Phi[lnkL][idxL] ) )
 				isLCand=true;	
 		}
 
 		bool isRCand=false;
 		if (idxR < N_PF_LINK)
 		{
-			local_phiR = Phi[lnkR][idxR]-  phi_offsetR;
-			local_etaR = ETA[lnkR][idxR]-region[i].hwEtaCenter;
-			local_etR  = ET[lnkR][idxR] ;
 			#ifdef DEBUGME
+			local_phiR = Phi[i][lnkR][idxR];
+			local_etaR = ETA[i][lnkR][idxR];
+			local_etR  = ET[i][lnkR][idxR] ;
 			std::cout<<"  > Checking R(r"<<i<<",l"<<lnkR<<",p"<<lnkR<<") : "
-					<<"("<<Phi[lnkR][idxR]<<"->"<<local_phiR<<", "<<ETA[lnkR][idxR]<<"->"<<local_etaR<<"   et : "<<local_etR
+					<<"("<<Phi[i][lnkL][idxL]<<"->"<<local_phiL<<", "<<ETA[i][lnkL][idxL]<<"->"<<local_etaL<<"   et : "<<local_etL
 					<<" ) is inside region "<<i<<" : "<<region[i].isInside(local_etaR, local_phiR)
 					<<"\n" ;
 			#endif
-			if( region[i].isInside(local_etaR, local_phiR ) )
+			if( region[i].isInside(ETA[i][lnkR][idxR], Phi[lnkR][idxR] ) )
 				isRCand=true;	
 		}
 
@@ -182,10 +176,10 @@ sector_loop:
 			nClusterInRegion[i]++;
 		if (isLCand and isRCand)
 		{
-			if ( ET[lnkL][idxL] < ET[lnkR][idxR]){
-			  H_in_regionized[i][hid].hwEta = local_etaR;
-			  H_in_regionized[i][hid].hwPhi = local_phiR;
-			  H_in_regionized[i][hid].hwPt =  ET[lnkR][idxR];
+			if ( ET[i][lnkL][idxL] < ET[i][lnkR][idxR]){
+			  H_in_regionized[i][hid].hwEta = ETA[i][lnkR][idxR];
+			  H_in_regionized[i][hid].hwPhi = Phi[i][lnkR][idxR];
+			  H_in_regionized[i][hid].hwPt =  ET[i][lnkR][idxR];
 			#ifdef DEBUGME
 			std::cout<<"  >    adding L as "<<hid<<" \n";
 			#endif
@@ -195,26 +189,26 @@ sector_loop:
 			#ifdef DEBUGME
 			std::cout<<"  >    adding R as "<<hid<<" \n";
 			#endif
-			  H_in_regionized[i][hid].hwEta = local_etaL;
-			  H_in_regionized[i][hid].hwPhi = local_phiL;
-			  H_in_regionized[i][hid].hwPt =  ET[lnkL][idxL];
+			  H_in_regionized[i][hid].hwEta = ETA[i][lnkL][idxL];
+			  H_in_regionized[i][hid].hwPhi = Phi[i][lnkL][idxL];
+			  H_in_regionized[i][hid].hwPt =  ET[i][lnkL][idxL];
 	                  idxL++;
 		     }
 		}
 		else if (isLCand)
 		{
-			  H_in_regionized[i][hid].hwEta = local_etaL;
-			  H_in_regionized[i][hid].hwPhi = local_phiL;
-			  H_in_regionized[i][hid].hwPt =  ET[lnkL][idxL];
+			  H_in_regionized[i][hid].hwEta = ETA[i][lnkL][idxL];
+			  H_in_regionized[i][hid].hwPhi = Phi[i][lnkL][idxL];
+			  H_in_regionized[i][hid].hwPt =  ET[i][lnkL][idxL];
 		          std::cout<<"  >    adding L as "<<hid<<" \n";
 	                  idxL++;
 	                  idxR++;
 		}
 		else if (isRCand)
 		{
-			  H_in_regionized[i][hid].hwEta = local_etaR;
-			  H_in_regionized[i][hid].hwPhi = local_phiR;
-		 	  H_in_regionized[i][hid].hwPt =  ET[lnkR][idxR];
+			  H_in_regionized[i][hid].hwEta = ETA[i][lnkR][idxR];
+			  H_in_regionized[i][hid].hwPhi = Phi[i][lnkR][idxR];
+			  H_in_regionized[i][hid].hwPt =  ET[i][lnkR][idxR];
 		          std::cout<<"  >    adding R as "<<hid<<" \n";
 	                  idxL++;
 	                  idxR++;
@@ -260,13 +254,13 @@ void compute(
 	    for(loop i=0; i<N_SECTORS; i++) {
 		#pragma HLS unroll factor=2 skip_exit_check 
 	        //#pragma HLS LATENCY max=2 min=2
-	//        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
-   proxyLoop :  for(loop j=0; j<NNEUTRALS ;j++)
-	        	{
-	        	    pfselne[i][j].hwPt  = H_in_regionized[i][j].hwPt  ;
-	        	    pfselne[i][j].hwEta = region[i].hwGlbEta( H_in_regionized[i][j].hwEta );
-	        	    pfselne[i][j].hwPhi = region[i].hwGlbPhi(H_in_regionized[i][j].hwPhi );
-	        	}
+	        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
+//   proxyLoop :  for(loop j=0; j<NNEUTRALS ;j++)
+//	        	{
+//	        	    pfselne[i][j].hwPt  = H_in_regionized[i][j].hwPt  ;
+//	        	    pfselne[i][j].hwEta = region[i].hwGlbEta( H_in_regionized[i][j].hwEta );
+//	        	    pfselne[i][j].hwPhi = region[i].hwGlbPhi(H_in_regionized[i][j].hwPhi );
+//	        	}
 	    }
 
    #ifdef DEBUGME    
@@ -297,14 +291,24 @@ void unpackLinksToHadCalo(
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=0
 #pragma HLS ARRAY_PARTITION variable=region complete dim=0
-    ap_uint<12>  ET[N_INPUT_LINKS][N_PF_LINK] ;
-    ap_uint<8>  ETA[N_INPUT_LINKS][N_PF_LINK] ;
-    ap_int<9>   PHI[N_INPUT_LINKS][N_PF_LINK] ;
+    ap_uint<12>  ET[N_SECTORS][3][N_PF_LINK] ;
+    ap_int<9>  ETA[N_SECTORS][3][N_PF_LINK] ;
+    ap_int<9>   PHI[N_SECTORS][3][N_PF_LINK] ;
+
+
+ ap_uint<4> REGION_TO_LINK_MAP[N_SECTORS][NLINKS_TO_SCAN]={
+    {0,1,5},
+    {1,2,0},
+    {2,3,1},
+    {3,4,2},
+    {4,5,3},
+    {5,0,4}
+    };
 
 #pragma HLS ARRAY_PARTITION variable=ET dim=0
 #pragma HLS ARRAY_PARTITION variable=ETA dim=0
 #pragma HLS ARRAY_PARTITION variable=PHI dim=0
-    fCall_unpackLink : unpackLinks(link_in , ET, ETA, PHI) ;
+    fCall_unpackLink : unpackLinks(link_in , ET, ETA, PHI,region,REGION_TO_LINK_MAP) ;
     fCall_regionizer : regionizeToHCALObjects( ET, ETA , PHI, region,H_in_regionized) ;
 }
 
