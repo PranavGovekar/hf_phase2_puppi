@@ -145,6 +145,13 @@ void mergeSort(	l1ct::HadCaloObj leftStream[4],
 	}
 }
 
+//void clearStream(hls::stream<l1ct::HadCaloObj> &stream) {
+//	l1ct::HadCaloObj clear;
+//	while(!stream.empty()){
+//		clear = stream.read();
+//	}
+//}
+
 void getStream(const ap_uint<576> &link,
 				const int &phi_offset,
 				const l1ct::PFRegion &region,
@@ -177,38 +184,41 @@ void algo_topIP1(
     ap_uint<576> link_in[N_INPUT_LINKS],
     ap_uint<576> link_out[N_OUTPUT_LINKS]
     ) {
-#pragma HLS PIPELINE II = 8
+#pragma HLS PIPELINE
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS INTERFACE ap_ctrl_hs port=return
 
-//	ap_uint<576> link_in_cp1[N_INPUT_LINKS];
-//	ap_uint<576> link_in_cp2[N_INPUT_LINKS];
-//
-//	for(int idx=0; idx < N_INPUT_LINKS; idx++) {
-//		link_in_cp1[idx] = link_in[idx];
-//		link_in_cp2[idx] = link_in[idx];
-//	}
+	ap_uint<576> link_in_1[N_INPUT_LINKS];
+#pragma HLS ARRAY_PARTITION variable=link_in_1 complete dim=0
+	ap_uint<576> link_in_2[N_INPUT_LINKS];
+#pragma HLS ARRAY_PARTITION variable=link_in_2 complete dim=0
+	for(int idx=0; idx < N_INPUT_LINKS; idx++) {
+#pragma HLS UNROLL
+		link_in_1[idx] = link_in[idx];
+		link_in_2[idx] = link_in[idx];
+	}
 
-
-    ap_uint<576> link_l = link_in[5];
-	ap_uint<576> link_n = link_in[0];
-	ap_uint<576> link_r;
+	ap_uint<3> left;
+	ap_uint<3> right;
 
     for(int idx=0; idx < N_SECTORS; idx++) {
 
-    	if(idx == 5) {
-    		link_r = link_in[0];
+    	if (idx==0){
+    		left = 5;
     	}
     	else {
-    		link_r = link_in[idx + 1];
+    		left = idx-1;
+    	}
+    	if (idx==5){
+    		right = 0;
+    	}
+    	else {
+    		right = idx+1;
     	}
 
-		compute(link_n, link_l, link_r, idx, link_out[idx]);
-
-	    link_l = link_n;
-		link_n = link_r;
-    	}
+		compute(link_in[idx], link_in_1[left], link_in_2[right], idx, link_out[idx]);
+	}
 }
 
 
