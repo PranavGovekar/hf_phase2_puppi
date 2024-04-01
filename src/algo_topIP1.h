@@ -78,10 +78,10 @@ public:
 
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
 
-void compute(const ap_uint<576> &link_center,
-			const ap_uint<576> &link_left,
-			const ap_uint<576> &link_right,
-			const l1ct::PFRegion &region,
+void compute(const ap_uint<576> link_center,
+			const ap_uint<576> link_left,
+			const ap_uint<576> link_right,
+			const ap_uint<3> sector,
 			ap_uint<576> &link_out);
 
 void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
@@ -94,7 +94,7 @@ void fillCenterLink(const ap_uint<576> &link,
 void fillExtra(	const ap_uint<576> &link_left,
 				const ap_uint<576> &link_right,
 				const l1ct::PFRegion &region,
-				const int N_REGION,
+				const ap_uint<3> N_REGION,
 				l1ct::HadCaloObj puppiIn[NCALO]);
 
 void mergeSort(l1ct::HadCaloObj leftStream[4],
