@@ -22,6 +22,7 @@
 #define N_PUPPI_LINK 8
 #define N_SECTORS 6
 #define N_PF 48
+#define N_EXTRA (NCALO - NNEUTRALS)
 
 using namespace std;
 typedef ap_uint<10> loop;
@@ -97,14 +98,14 @@ void fillExtra(	const ap_uint<576> &link_left,
 				const ap_uint<3> N_REGION,
 				l1ct::HadCaloObj puppiIn[NCALO]);
 
-void mergeSort(l1ct::HadCaloObj leftStream[4],
-			l1ct::HadCaloObj rightStream[4],
+void mergeSort(l1ct::HadCaloObj leftStream[N_EXTRA],
+			l1ct::HadCaloObj rightStream[N_EXTRA],
 			l1ct::HadCaloObj puppiIn[NCALO]);
 
-void getStream(const ap_uint<576> &link,
+void getInside(const ap_uint<576> &link,
 				const int &phi_offset,
 				const l1ct::PFRegion &region,
-				l1ct::HadCaloObj outstream[4]);
+				l1ct::HadCaloObj outstream[N_EXTRA]);
 
 //void clearStream(hls::stream<l1ct::HadCaloObj> &stream);
 

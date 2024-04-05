@@ -18,7 +18,6 @@ void compute(const ap_uint<576> link_center,
     region.hwPhiHalfWidth = l1ct::phi_t(6);
     region.hwPhiCenter = l1ct::glbphi_t((12*sector)+5);
 
-
 	l1ct::HadCaloObj puppiIn[NCALO];
 //#pragma HLS ARRAY_PARTITION dim=1 type=complete variable=puppiIn
 	l1ct::PuppiObj pfselne[NNEUTRALS];
@@ -38,7 +37,6 @@ void compute(const ap_uint<576> link_center,
 #endif
 
 	fwdlinpuppi(region, puppiIn, pfselne);
-
 	pack(pfselne, link_out);
 }
 
@@ -102,23 +100,23 @@ void fillExtra(	const ap_uint<576> &link_left,
 	if (  N_REGION == 0              and    region_l == (5)) phi_offset_l+=72;
 	if (  N_REGION == (5)  and    region_r == 0                ) phi_offset_r-=72;
 
-	l1ct::HadCaloObj leftStream[4];
-	l1ct::HadCaloObj rightStream[4];
+	l1ct::HadCaloObj leftStream[N_EXTRA];
+	l1ct::HadCaloObj rightStream[N_EXTRA];
 
-	for(loop idx=0; idx<4; idx++) {
+	for(loop idx=0; idx<N_EXTRA; idx++) {
 		leftStream[idx].clear();
 		rightStream[idx].clear();
 	}
 
-	getStream(link_left, phi_offset_l, region, leftStream);
-	getStream(link_right, phi_offset_r, region, rightStream);
+	getInside(link_left, phi_offset_l, region, leftStream);
+	getInside(link_right, phi_offset_r, region, rightStream);
 
 	mergeSort(leftStream, rightStream, puppiIn);
 
 }
 
-void mergeSort(	l1ct::HadCaloObj leftStream[4],
-				l1ct::HadCaloObj rightStream[4],
+void mergeSort(	l1ct::HadCaloObj leftStream[N_EXTRA],
+				l1ct::HadCaloObj rightStream[N_EXTRA],
 				l1ct::HadCaloObj puppiIn[NCALO]
 	){
 
@@ -131,14 +129,14 @@ void mergeSort(	l1ct::HadCaloObj leftStream[4],
 	left = leftStream[idx_left];
 	right = rightStream[idx_right];
 
-	for(loop idx=0; idx<4; idx++) {
+	for(loop idx=0; idx<N_EXTRA; idx++) {
 		if(left.hwPt < right.hwPt){
-			puppiIn[8+idx] = right;
+			puppiIn[NNEUTRALS+idx] = right;
 			idx_right = idx_right + 1;
 			right = rightStream[idx_right];
 		}
 		else {
-			puppiIn[8+idx] = left;
+			puppiIn[NNEUTRALS+idx] = left;
 			idx_left = idx_left + 1;
 			left = leftStream[idx_left];
 		}
@@ -152,10 +150,10 @@ void mergeSort(	l1ct::HadCaloObj leftStream[4],
 //	}
 //}
 
-void getStream(const ap_uint<576> &link,
+void getInside(const ap_uint<576> &link,
 				const int &phi_offset,
 				const l1ct::PFRegion &region,
-				l1ct::HadCaloObj outstream[4]
+				l1ct::HadCaloObj outstream[N_EXTRA]
 				){
 	ap_uint<576> word = link;
 	int count = 0;
@@ -172,7 +170,7 @@ void getStream(const ap_uint<576> &link,
 
 			count = count + 1;
 		}
-		if (count == 4) break;
+		if (count == N_EXTRA) break;
 		word=word>>64;
 	}
 }
