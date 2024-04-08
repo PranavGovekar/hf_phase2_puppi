@@ -15,6 +15,14 @@
 #include "../../dataformats/layer1_multiplicities.h"
 #include "linpuppi_bits.h"
 
+//-for-streaming-interface---------------------//
+#include "hls_stream.h"                        //
+#include "ap_axi_sdata.h"                      //
+#define N_WORDS 9                              // 
+#define BIT_WIDTH 64                           //
+typedef ap_axis <BIT_WIDTH,0,0,1> axi_stream;  //
+//---------------------------------------------//
+
 #define N_INPUT_LINKS   6
 #define N_OUTPUT_LINKS  6
 
