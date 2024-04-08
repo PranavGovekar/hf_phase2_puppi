@@ -10,6 +10,7 @@
 #include "linpuppi.h"
 #include "algo_topIP1.h"
 #include <cstdint>
+#define NLINKS_TO_SCAN 3
 
 void compute(const ap_uint<576> link_center,
 			const ap_uint<576> link_left,

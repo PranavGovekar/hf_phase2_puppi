@@ -7,6 +7,8 @@ usage() {
     echo "  -build  Set up Project"
     echo "  -csim   Run C Simulation"
     echo "  -csyn   Run C Synthesis"
+    echo "  -rsyn   Run RTL Synthesis"
+    echo "  -impl   Run Implementation"
     echo "  -rp     View Synthesis Report"
     exit 1
 }
@@ -33,11 +35,34 @@ while [[ $# -gt 0 ]]; do
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
-        -csyn)
+        -csyn)    
+	    echo "Copying the codes for provenenace ! "
+            mkdir -p  project/HF_algotopMultiCopy/code
+	    cp -r src/* project/HF_algotopMultiCopy/code
             echo "Running C Synthesis...."
             date
             start=`date +%s`
             vitis_hls -f scripts/run_csynth.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+        -rsyn)
+            echo "Running RTL Synthesis...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/run_rsynth.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+         -impl)
+            echo "Running Implementation ...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/run_impl.tcl 
             date
             end=`date +%s`
             echo Execution time was `expr $end - $start` seconds.
@@ -57,8 +82,8 @@ while [[ $# -gt 0 ]]; do
         -rp)
             echo "Synthesis Report"
             date
-            cat project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt
-            cp project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
+            cat project/HF_algotopMultiCopy/csim_solution/syn/report/algo_topIP1_csynth.rpt
+            cp project/HF_algotopMultiCopy/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
             flag_provided=true
             ;;
         *)
