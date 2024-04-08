@@ -6,13 +6,22 @@
 #include <algorithm>
 #include <utility>
 #include <stdint.h>
-
+#include <hls_stream.h>
+#include<hls_task.h>
 
 #include "DataFormats/L1TParticleFlow/interface/layer1_objs.h"
 #include "DataFormats/L1TParticleFlow/interface/pf.h"
 #include "DataFormats/L1TParticleFlow/interface/puppi.h"
 #include "../../dataformats/layer1_multiplicities.h"
 #include "linpuppi_bits.h"
+
+//-for-streaming-interface---------------------//
+#include "hls_stream.h"                        //
+#include "ap_axi_sdata.h"                      //
+#define N_WORDS 9                              // 
+#define BIT_WIDTH 64                           //
+typedef ap_axis <BIT_WIDTH,0,0,1> axi_stream;  //
+//---------------------------------------------//
 
 #define N_INPUT_LINKS   6
 #define N_OUTPUT_LINKS  6
@@ -21,6 +30,7 @@
 #define N_PUPPI_LINK 8
 #define N_SECTORS 6
 #define N_PF 48
+#define N_EXTRA (NCALO - NNEUTRALS)
 
 using namespace std;
 typedef ap_uint<10> loop;
@@ -75,5 +85,40 @@ public:
 
 };
 
+void ReadWrite( ap_uint<64> *in, 
+                ap_uint<64> *out
+            );
+
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
+
+void compute(const ap_uint<576> link_center,
+			const ap_uint<576> link_left,
+			const ap_uint<576> link_right,
+			const ap_uint<3> sector,
+			ap_uint<576> &link_out);
+
+void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out);
+
+void fillCenterLink(const ap_uint<576> &link,
+					const l1ct::PFRegion &region,
+					l1ct::HadCaloObj puppiIn[NCALO]);
+
+void fillExtra(	const ap_uint<576> &link_left,
+				const ap_uint<576> &link_right,
+				const l1ct::PFRegion &region,
+				const ap_uint<3> N_REGION,
+				l1ct::HadCaloObj puppiIn[NCALO]);
+
+void mergeSort(l1ct::HadCaloObj leftStream[N_EXTRA],
+			l1ct::HadCaloObj rightStream[N_EXTRA],
+			l1ct::HadCaloObj puppiIn[NCALO]);
+
+void getInside(const ap_uint<576> &link,
+				const int &phi_offset,
+				const l1ct::PFRegion &region,
+				l1ct::HadCaloObj outstream[N_EXTRA]);
+
+//void clearStream(hls::stream<l1ct::HadCaloObj> &stream);
+
 #endif
