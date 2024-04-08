@@ -77,6 +77,10 @@ public:
 
 };
 
+void ReadWrite( ap_uint<64> *in, 
+                ap_uint<64> *out
+            );
+
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
 
 void compute(const ap_uint<576> link_center,
