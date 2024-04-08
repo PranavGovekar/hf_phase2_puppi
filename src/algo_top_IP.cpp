@@ -1,12 +1,11 @@
-#include "linpuppi.h"
 #include "algo_topIP1.h"
 #include <cstdint>
 
-void compute(const ap_uint<576> link_center,
+void Regionizer(const ap_uint<576> link_center,
 			const ap_uint<576> link_left,
 			const ap_uint<576> link_right,
 			const ap_uint<3> sector,
-			ap_uint<576> &link_out
+			l1ct::HadCaloObj puppiIn[NCALO]
 				){
 	#pragma HLS PIPELINE
 
@@ -17,11 +16,6 @@ void compute(const ap_uint<576> link_center,
     region.hwPhiExtra = l1ct::phi_t(2);
     region.hwPhiHalfWidth = l1ct::phi_t(6);
     region.hwPhiCenter = l1ct::glbphi_t((12*sector)+5);
-
-	l1ct::HadCaloObj puppiIn[NCALO];
-//#pragma HLS ARRAY_PARTITION dim=1 type=complete variable=puppiIn
-	l1ct::PuppiObj pfselne[NNEUTRALS];
-//#pragma HLS ARRAY_PARTITION dim=1 type=complete variable=pfselne
 
 	fillCenterLink(link_center, region, puppiIn);
 	fillExtra(link_left, link_right, region, sector, puppiIn);
@@ -36,13 +30,12 @@ void compute(const ap_uint<576> link_center,
 	}
 #endif
 
-	fwdlinpuppi(region, puppiIn, pfselne);
-	pack(pfselne, link_out);
 }
 
 
 void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
-			ap_uint<576> &link_out){
+			ap_uint<576> &link_out
+			){
 	const ap_uint<8> BW = 64;
 	ap_uint<12> start = 0;
 	ap_uint<576> temp_link;
@@ -143,6 +136,8 @@ void mergeSort(	l1ct::HadCaloObj leftStream[N_EXTRA],
 	}
 }
 
+
+
 //void clearStream(hls::stream<l1ct::HadCaloObj> &stream) {
 //	l1ct::HadCaloObj clear;
 //	while(!stream.empty()){
@@ -197,11 +192,24 @@ void algo_topIP1(
 		link_in_2[idx] = link_in[idx];
 	}
 
+    l1ct::PFRegion region[N_SECTORS];
+regions_init:
+    for(int i=0 ; i < N_SECTORS ; i++) {
+        region[i].hwEtaCenter = l1ct::glbeta_t(12);
+        region[i].hwEtaHalfWidth = l1ct::eta_t(12);
+        region[i].hwEtaExtra = l1ct::eta_t(0);
+        region[i].hwPhiExtra = l1ct::phi_t(2);
+        region[i].hwPhiHalfWidth = l1ct::phi_t(6);
+        region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
+    }
+
 	ap_uint<3> left;
 	ap_uint<3> right;
 
-    for(int idx=0; idx < N_SECTORS; idx++) {
+	l1ct::HadCaloObj puppiIn[N_SECTORS][NCALO];
+	l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS];
 
+    for(int idx=0; idx < N_SECTORS; idx++) {
     	if (idx==0){
     		left = 5;
     	}
@@ -215,8 +223,16 @@ void algo_topIP1(
     		right = idx+1;
     	}
 
-		compute(link_in[idx], link_in_1[left], link_in_2[right], idx, link_out[idx]);
+    	Regionizer(link_in[idx], link_in_1[left], link_in_2[right], idx, puppiIn[idx]);
 	}
+
+    for(int i=0; i < N_SECTORS; i++) {
+    	fwdlinpuppi(region[i], puppiIn[i], pfselne[i]);
+    }
+
+    for(int i=0; i < N_SECTORS; i++) {
+    	pack(pfselne[i], link_out[i]);
+    }
 }
 
 
