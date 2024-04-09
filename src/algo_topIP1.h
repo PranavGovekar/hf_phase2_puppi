@@ -2,6 +2,7 @@
 #define ALGO_TOPIP1_H
 
 #include <iostream>
+#include "linpuppi.h"
 #include "ap_int.h"
 #include <algorithm>
 #include <utility>
@@ -14,14 +15,6 @@
 #include "DataFormats/L1TParticleFlow/interface/puppi.h"
 #include "../../dataformats/layer1_multiplicities.h"
 #include "linpuppi_bits.h"
-
-//-for-streaming-interface---------------------//
-#include "hls_stream.h"                        //
-#include "ap_axi_sdata.h"                      //
-#define N_WORDS 9                              // 
-#define BIT_WIDTH 64                           //
-typedef ap_axis <BIT_WIDTH,0,0,1> axi_stream;  //
-//---------------------------------------------//
 
 #define N_INPUT_LINKS   6
 #define N_OUTPUT_LINKS  6
@@ -85,10 +78,6 @@ public:
 
 };
 
-void ReadWrite( ap_uint<64> *in, 
-                ap_uint<64> *out
-            );
-
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
 
 void compute(const ap_uint<576> link_center,
@@ -119,6 +108,5 @@ void getInside(const ap_uint<576> &link,
 				const l1ct::PFRegion &region,
 				l1ct::HadCaloObj outstream[N_EXTRA]);
 
-//void clearStream(hls::stream<l1ct::HadCaloObj> &stream);
 
 #endif

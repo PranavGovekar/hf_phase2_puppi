@@ -1,5 +1,4 @@
-#include "linpuppi.h"
-#include "algo_topIP1.h"
+#include "aximmWrapper.h"
 
 void ReadWrite( ap_uint<64> in[54],
                 ap_uint<64> out[54]
@@ -19,7 +18,7 @@ void ReadWrite( ap_uint<64> in[54],
     for(loop i=0; i<N_INPUT_LINKS; i++) {
         for(loop j=0; j<N_WORDS; j++) {
             #pragma HLS PIPELINE
-            #ifdef DEBUGME
+            #ifdef __SYNTHESIS__
             std::cout << "\nelement : " << i*N_WORDS+j;
             std::cout << "\n" << start << endl;
             std::cout << in[(i*N_WORDS)+j] <<endl;
@@ -28,7 +27,7 @@ void ReadWrite( ap_uint<64> in[54],
             tempLink.range(start+(BW-1),start) = in[(i*N_WORDS)+j];
             start = start + BW;
         }
-        #ifdef DEBUGME
+        #ifdef __SYNTHESIS__
         std::cout << "\ntempLink " << i << " : " <<  tempLink;
         std::cout << "\ntempLink binary " << i << " : " <<  std::bitset<576>(tempLink);
         #endif
@@ -37,7 +36,7 @@ void ReadWrite( ap_uint<64> in[54],
         start = 0;
     }
 
-    #ifdef DEBUGME
+    #ifdef __SYNTHESIS__
     std::cout << "HERE+++++++++++++++++++++++++++" << endl;
     for(loop i=0; i<N_OUTPUT_LINKS; i++) {
         std::cout << std::bitset<576>(link_in[i]) << endl;
@@ -47,7 +46,7 @@ void ReadWrite( ap_uint<64> in[54],
 
     algo_topIP1(link_in,link_out);
 
-    #ifdef DEBUGME
+    #ifdef __SYNTHESIS__
     std::cout << "HERE+++++++++++++++++++++++++++" << endl;
     for(loop i=0; i<N_OUTPUT_LINKS; i++) {
         std::cout << std::bitset<576>(link_out[i]) << endl;

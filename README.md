@@ -10,11 +10,16 @@ Run ``./run.sh``
 ```
 Usage: ./run.sh [OPTIONS]
 Options:
-  -init   Initialize Submodules
-  -build  Set up Project
-  -csim   Run C Simulation
-  -csyn   Run C Synthesis
-  -rp     View Synthesis Report 
+  -init       Initialize Submodules
+  -build      Set up Project
+  -csim       Run C Simulation
+  -csyn       Run C Synthesis
+  -rsyn       Run RTL Synthesis
+  -impl       Run Implementation
+  -csimrp      View C Synthesis Report
+  -implrp     View Implementation Report
+  -axis       Build AXIS Wrapper
+  -zcu        Build AXIMM Wrapper
 
 ```
 Before running C Simulation make a directory named inputs ``mkdir inputs``  and place all you input files inside.

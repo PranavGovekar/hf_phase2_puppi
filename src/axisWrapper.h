@@ -4,6 +4,7 @@
 #include "algo_topIP1.h"
 #include "hls_stream.h"
 #include "ap_axi_sdata.h"
+
 #define N_WORDS 9
 #define BIT_WIDTH 64
 typedef ap_axis <BIT_WIDTH,0,0,1> axi_stream;
