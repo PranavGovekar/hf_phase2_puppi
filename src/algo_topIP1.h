@@ -1,6 +1,7 @@
 #ifndef ALGO_TOPIP1_H
 #define ALGO_TOPIP1_H
 
+#include "linpuppi.h"
 #include <iostream>
 #include "linpuppi.h"
 #include "ap_int.h"
@@ -80,11 +81,11 @@ public:
 
 void algo_topIP1(ap_uint<576> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]);
 
-void compute(const ap_uint<576> link_center,
+void Regionizer(const ap_uint<576> link_center,
 			const ap_uint<576> link_left,
 			const ap_uint<576> link_right,
 			const ap_uint<3> sector,
-			ap_uint<576> &link_out);
+			l1ct::HadCaloObj puppiIn[NCALO]);
 
 void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
 			ap_uint<576> &link_out);
