@@ -1,5 +1,4 @@
 #include "algo_topIP1.h"
-#include <cstdint>
 
 void Regionizer(const ap_uint<576> link_center,
 			const ap_uint<576> link_left,
@@ -135,15 +134,6 @@ void mergeSort(	l1ct::HadCaloObj leftStream[N_EXTRA],
 		}
 	}
 }
-
-
-
-//void clearStream(hls::stream<l1ct::HadCaloObj> &stream) {
-//	l1ct::HadCaloObj clear;
-//	while(!stream.empty()){
-//		clear = stream.read();
-//	}
-//}
 
 void getInside(const ap_uint<576> &link,
 				const int &phi_offset,

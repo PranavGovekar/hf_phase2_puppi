@@ -3,6 +3,7 @@
 
 #include "linpuppi.h"
 #include <iostream>
+#include "linpuppi.h"
 #include "ap_int.h"
 #include <algorithm>
 #include <utility>
@@ -108,6 +109,5 @@ void getInside(const ap_uint<576> &link,
 				const l1ct::PFRegion &region,
 				l1ct::HadCaloObj outstream[N_EXTRA]);
 
-//void clearStream(hls::stream<l1ct::HadCaloObj> &stream);
 
 #endif

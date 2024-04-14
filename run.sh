@@ -3,11 +3,16 @@
 usage() {
     echo "Usage: $0 [OPTIONS]"
     echo "Options:"
-    echo "  -init   Initialize Submodules"
-    echo "  -build  Set up Project"
-    echo "  -csim   Run C Simulation"
-    echo "  -csyn   Run C Synthesis"
-    echo "  -rp     View Synthesis Report"
+    echo "  -init       Initialize Submodules"
+    echo "  -build      Set up Project"
+    echo "  -csim       Run C Simulation"
+    echo "  -csyn       Run C Synthesis"
+    echo "  -rsyn       Run RTL Synthesis"
+    echo "  -impl       Run Implementation"
+    echo "  -csimrp     View C Synthesis Report"
+    echo "  -implrp     View Implementation Report"
+    echo "  -axis       Build AXIS Wrapper"
+    echo "  -zcu        Build AXIMM Wrapper"
     exit 1
 }
 
@@ -21,6 +26,8 @@ while [[ $# -gt 0 ]]; do
             date
             git submodule init
             git submodule update
+            sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
+            sed -i '44s/.*/#define NCALO 12/;45s/.*/#define NNEUTRALS 8/' correlator-common/dataformats/layer1_multiplicities.h
             flag_provided=true
         ;;
         -csim)
@@ -33,7 +40,10 @@ while [[ $# -gt 0 ]]; do
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
-        -csyn)
+        -csyn)    
+	    echo "Copying the codes for provenenace ! "
+            mkdir -p  project/HF_PUPPI/code
+	    cp -r src/* project/HF_PUPPI/code
             echo "Running C Synthesis...."
             date
             start=`date +%s`
@@ -43,22 +53,67 @@ while [[ $# -gt 0 ]]; do
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
+        -rsyn)
+            echo "Running RTL Synthesis...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/run_rsynth.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+         -impl)
+            echo "Running Implementation ...."
+            source /home/bitsmith/Xilinx/Vivado/2023.1/settings64.sh
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/run_impl.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
         -build)
             echo "Setting up Project...."
             date
             start=`date +%s`
-            sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
             vitis_hls -f scripts/build.tcl 
             date
             end=`date +%s`
             echo Execution time was `expr $end - $start` seconds.
             flag_provided=true
             ;;
-        -rp)
+        -axis)
+            echo "Setting up Project...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/build_AXIS.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+        -zcu)
+            echo "Setting up Project...."
+            date
+            start=`date +%s`
+            vitis_hls -f scripts/build_ZCU.tcl 
+            date
+            end=`date +%s`
+            echo Execution time was `expr $end - $start` seconds.
+            flag_provided=true
+            ;;
+        -csimrp)
             echo "Synthesis Report"
             date
-            cat project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt
-            cp project/HF_CSIM/csim_solution/syn/report/algo_topIP1_csynth.rpt ./report.rpt
+            less project/HF_PUPPI/csim_solution/syn/report/algo_topIP1_csynth.rpt
+            flag_provided=true
+            ;;
+        -implrp)
+            echo "Implementation Report"
+            date
+            cat project/HF_PUPPI/csim_solution/impl/report/verilog/algo_topIP1_export.rpt
             flag_provided=true
             ;;
         *)
