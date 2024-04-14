@@ -16,7 +16,7 @@ Options:
   -csyn       Run C Synthesis
   -rsyn       Run RTL Synthesis
   -impl       Run Implementation
-  -csimrp      View C Synthesis Report
+  -csimrp     View C Synthesis Report
   -implrp     View Implementation Report
   -axis       Build AXIS Wrapper
   -zcu        Build AXIMM Wrapper

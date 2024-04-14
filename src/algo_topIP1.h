@@ -3,7 +3,6 @@
 
 #include "linpuppi.h"
 #include <iostream>
-#include "linpuppi.h"
 #include "ap_int.h"
 #include <algorithm>
 #include <utility>
@@ -109,5 +108,8 @@ void getInside(const ap_uint<576> &link,
 				const l1ct::PFRegion &region,
 				l1ct::HadCaloObj outstream[N_EXTRA]);
 
+void puppi(	l1ct::PFRegion region[N_SECTORS],
+			l1ct::HadCaloObj puppiIn[N_SECTORS][NCALO],
+			l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS]);
 
 #endif

@@ -14,21 +14,17 @@ int main() {
     ap_uint<576> link_in[N_INPUT_LINKS] ;
     ap_uint<576> link_out[N_OUTPUT_LINKS] ;
 
-    ap_uint<64> inputLink[54];
-    ap_uint<64> outputLink[54];
-
     PFcluster InPFcluster[N_PF];
 
     for (int fileNum = 0; fileNum < N_TEST_FILES; fileNum++) {
-        string filename = "../../../../../../data/evt_" + to_string(fileNum) + "_clipped.csv";
-        string save = "../../../../../../outputs/evt_" + to_string(fileNum) + "_puppi.csv";
+        string filename = "../../../../../data/evt_" + to_string(fileNum) + "_clipped.csv";
+        string save = "../../../../../outputs/evt_" + to_string(fileNum) + "_puppi.csv";
 
         std::fstream read (filename);
         if (!read.is_open()) {
             std::cout << "error: file open failed | probably you don't have input files ಠ_ಠ" << "\n";
             return 1;
         }
-	std::cout<<"Opening file : "<<filename<<"\n";
 
         string data;
         int lineNum = 0;
@@ -75,21 +71,15 @@ int main() {
             start = 0;
             end = start+63;
             for(loop k=0; k<N_PF_LINK; k++) {
-                // std::cout << "Et : " << InPFcluster[i*N_PF_LINK+k].ET << " Eta : " << InPFcluster[i*N_PF_LINK+k].Eta << " Phi : " << InPFcluster[i*N_PF_LINK+k].Phi << endl;
-                inputLink[(i*N_PF_LINK)+k] = InPFcluster[i*N_PF_LINK+k].data()  ;
+                std::cout << "Et : " << InPFcluster[i*N_PF_LINK+k].ET << " Eta : " << InPFcluster[i*N_PF_LINK+k].Eta << " Phi : " << InPFcluster[i*N_PF_LINK+k].Phi << endl;
+                link_in[i].range(end, start) = InPFcluster[i*N_PF_LINK+k].data()  ;
                 start = start + 64 ;
                 end = start + 63 ;
-
-                std::cout << inputLink[(i*N_PF_LINK)+k];
-                std::cout << ",";
             }
         }
 
-        std::cout << "\nread finished" << endl << endl;
+        algo_topIP1(link_in, link_out) ;
 
-        ReadWrite(inputLink, outputLink) ;
-
-        std::cout << "puppi done";
         std::ofstream write (save);
         write << "#et,eta,phi\n";
 
@@ -98,7 +88,7 @@ int main() {
             start = 0;
             end = start+BW ;
             for(loop k=0; k<N_PUPPI_LINK; k++) {
-                l1ct::PuppiObj puppiOutObj = l1ct::PuppiObj::unpack(outputLink[(i*N_PUPPI_LINK)+k]);
+                l1ct::PuppiObj puppiOutObj = l1ct::PuppiObj::unpack( link_out[i].range(end, start)  );
                 start = start + BW ;
                 end = start + BW ;
                 write << puppiOutObj.hwPt << "," << puppiOutObj.hwEta<< "," << puppiOutObj.hwPhi << "\n";

@@ -160,6 +160,18 @@ void getInside(const ap_uint<576> &link,
 	}
 }
 
+void puppi(	l1ct::PFRegion region[N_SECTORS],
+			l1ct::HadCaloObj puppiIn[N_SECTORS][NCALO],
+			l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS]){
+
+#pragma HLS INLINE off
+
+    for(int i=0; i < N_SECTORS; i++) {
+    	fwdlinpuppi(region[i], puppiIn[i], pfselne[i]);
+    }
+
+}
+
 
 
 
@@ -167,7 +179,7 @@ void algo_topIP1(
     ap_uint<576> link_in[N_INPUT_LINKS],
     ap_uint<576> link_out[N_OUTPUT_LINKS]
     ) {
-#pragma HLS PIPELINE
+#pragma HLS PIPELINE II=8
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS INTERFACE ap_ctrl_hs port=return
@@ -216,9 +228,8 @@ regions_init:
     	Regionizer(link_in[idx], link_in_1[left], link_in_2[right], idx, puppiIn[idx]);
 	}
 
-    for(int i=0; i < N_SECTORS; i++) {
-    	fwdlinpuppi(region[i], puppiIn[i], pfselne[i]);
-    }
+    puppi(region, puppiIn, pfselne);
+
 
     for(int i=0; i < N_SECTORS; i++) {
     	pack(pfselne[i], link_out[i]);
