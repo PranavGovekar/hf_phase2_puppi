@@ -179,7 +179,7 @@ void algo_topIP1(
     ap_uint<576> link_in[N_INPUT_LINKS],
     ap_uint<576> link_out[N_OUTPUT_LINKS]
     ) {
-#pragma HLS PIPELINE II=8
+#pragma HLS PIPELINE II=6
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
 #pragma HLS INTERFACE ap_ctrl_hs port=return
