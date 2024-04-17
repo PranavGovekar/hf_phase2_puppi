@@ -27,7 +27,7 @@ while [[ $# -gt 0 ]]; do
             git submodule init
             git submodule update
             sed -i -e '3i\#define REG_HF\' correlator-common/puppi/firmware/linpuppi.h
-            sed -i '44s/.*/#define NCALO 12/;45s/.*/#define NNEUTRALS 8/' correlator-common/dataformats/layer1_multiplicities.h
+            sed -i '44s/.*/#define NCALO 16/;45s/.*/#define NNEUTRALS 8/' correlator-common/dataformats/layer1_multiplicities.h
             flag_provided=true
         ;;
         -csim)
