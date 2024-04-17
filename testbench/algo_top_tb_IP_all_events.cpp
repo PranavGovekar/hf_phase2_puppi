@@ -15,6 +15,11 @@ int main() {
     ap_uint<576> link_out[N_OUTPUT_LINKS] ;
 
     PFcluster InPFcluster[N_PF];
+    string i_pattern = "../../../../../outputs/inputPattern.mem";
+    string o_pattern = "../../../../../outputs/outputPattern.mem";
+
+    std::ofstream outFile (o_pattern);
+    std::ofstream inFile (i_pattern);
 
     for (int fileNum = 0; fileNum < N_TEST_FILES; fileNum++) {
         string filename = "../../../../../data/evt_" + to_string(fileNum) + "_clipped.csv";
@@ -67,6 +72,7 @@ int main() {
 
         read.close();
 
+
         for(loop i=0; i<N_INPUT_LINKS; i++) {
             start = 0;
             end = start+63;
@@ -76,12 +82,22 @@ int main() {
                 start = start + 64 ;
                 end = start + 63 ;
             }
+			for(loop p=0; p<576; p++) {
+				inFile << link_in[i][575 - p];
+//				std::cout << link_in[i][575 - p];
+			}
+			inFile << "\n";
+//			std::cout << "\n";
+//			std::cout << link_in[i];
+//			std::cout << "\n";
         }
 
         algo_topIP1(link_in, link_out) ;
 
         std::ofstream write (save);
         write << "#et,eta,phi\n";
+
+
 
         const ap_uint<8> BW = 64;
         for(loop i=0; i<N_OUTPUT_LINKS; i++) {
@@ -96,10 +112,21 @@ int main() {
                           << InPFcluster[i*N_PF_LINK+k].Eta << "," << InPFcluster[i*N_PF_LINK+k].Phi << ",  "<< " OUT : " << puppiOutObj.hwPt << ","
                           << puppiOutObj.hwEta<< "," << puppiOutObj.hwPhi << "\n";
             }
+			for(loop p=0; p<576; p++) {
+				outFile << link_out[i][575 - p];
+//				std::cout << link_out[i][575 - p];
+			}
+			outFile << "\n";
+//			std::cout << "\n";
+//			std::cout << link_out[i];
+//			std::cout << "\n";
         }
 
         cout << "writing to evt_" + to_string(fileNum) + "_puppi.csv" << endl;
         write.close();
     }
+    outFile.close();
+    inFile.close();
+
     return 0;
 }
