@@ -23,3 +23,12 @@ Options:
 
 ```
 Before running C Simulation make a directory named inputs ``mkdir inputs``  and place all you input files inside.
+
+
+### Helper Scripts
+
+Generate HF pattern files with a customizable firing pattern. Please edit the files to customize the Et distribution of the clusters. For geenrating different configuration with a specific file , please change the seed of the generator by speciying it in the argument line through `-s`
+
+```
+[]$ python scripts/makeHFRawEvent.py  -s 799 -t hfV0
+```
