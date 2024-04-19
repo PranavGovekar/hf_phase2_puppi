@@ -65,6 +65,27 @@ def writePatternFile(link_strings,ofname="output.links"):
 
 
 
+def writeDescriptionFile(HF,ofname="output.csv"):
+    with open(ofname,"w") as f:
+        print("writing out ",ofname)
+        for wIdx in range(18):
+            for i in range(11):
+
+                et=min(int(HF[i][2*wIdx]),256)
+                if et < 1:
+                    continue
+                ostr=f"{et},{i},{2*wIdx}"
+                ostr+=f",{et:10b}".replace(" ","0")
+                f.write(ostr+"\n")
+                
+                et=min(int(HF[i][2*wIdx+1]),256)
+                if et < 1:
+                    continue
+                ostr=f"{et},{i},{2*wIdx+1}"
+                ostr+=f",{et:10b}".replace(" ","0")
+                f.write(ostr+"\n")
+
+
 HF=np.zeros(shape=(11,18*2))
 
 #########     CLUSTER ENERGY DEFINITION ############
@@ -100,6 +121,7 @@ f.savefig(ofname,bbox_inches='tight')
 
 
 link_strings=getLinkStrings(HF)
-
 writePatternFile([link_strings],f"{args.tag}_seed{args.seed}.links")
+
+writeDescriptionFile(HF,f"{args.tag}_seed{args.seed}.csv")
 
