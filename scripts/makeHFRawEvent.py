@@ -1,207 +1,105 @@
-<!DOCTYPE html>
-<html lang="en" class="login-pf">
+import scipy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+import argparse
 
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <meta name="robots" content="noindex, nofollow">
+parser = argparse.ArgumentParser()
+parser.add_argument("-t","--tag"    , help="tag. output files will be saved as <tag>.links , <tag>.png" ,default="hf_raw")
+parser.add_argument("-s","--seed"   , help="Seed for the random number generator",type=int , default=799 )
+args = parser.parse_args()
 
-            <meta name="viewport" content="width=device-width,initial-scale=1"/>
-    <title>Sign in to CERN</title>
-    <link rel="icon" href="/auth/resources/99854/login/keycloak-cern-theme/img/favicon.ico" />
-            <link href="/auth/resources/99854/common/keycloak/web_modules/@patternfly/react-core/dist/styles/base.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/common/keycloak/web_modules/@patternfly/react-core/dist/styles/app.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/common/keycloak/node_modules/patternfly/dist/css/patternfly.min.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/common/keycloak/node_modules/patternfly/dist/css/patternfly-additions.min.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/common/keycloak/lib/pficon/pficon.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/login/keycloak-cern-theme/css/login.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/login/keycloak-cern-theme/css/cern-login.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/login/keycloak-cern-theme/css/toolbar.css" rel="stylesheet" />
-            <link href="/auth/resources/99854/login/keycloak-cern-theme/css/footer.css" rel="stylesheet" />
-            <script src="/auth/resources/99854/login/keycloak-cern-theme/js/polyfill.js" type="text/javascript"></script>
-            <script src="/auth/resources/99854/login/keycloak-cern-theme/js/onload.js" type="text/javascript"></script>
-</head>
-
-<body class="">
-<div style="position: fixed; width: 100%; top: 0px; left: 0px; z-index: 70;">
-    <div id="cern-toolbar">
-        <h1><a title="CERN" href="https://cern.ch">CERN <span>Accelerating science</span></a></h1>
-        <ul class="cern-signedin">
-            <li><a title="Search CERN resources and browse the directory" class="cern-directory" href="https://cern.ch/directory">Directory</a></li>
-        </ul>
-    </div>
-</div>
-  <div class="login-pf-page">
-    <div id="kc-header" class="login-pf-page-header">
-        <div id="kc-header-wrapper"
-             class="">CERN Single Sign-On</div>
-    </div>
-    <div class="card-pf login-pf-accounts">
-        <header class="login-pf-header">
-                <h1 id="kc-page-title">        Sign in to your account
-
-</h1>
-      </header>
-      <div id="kc-content">
-        <div id="kc-content-wrapper">
+np.random.seed(args.seed)
 
 
+def fillCluster(HF,Energy=30.0,width=0.8,verbose=10):
 
-    <div id="alert-security" class="alert-warning pf-c-alert pf-m-inline pf-m-warning" style="display: none">
-        <div class="pf-c-alert__icon">
-            <span class="fa fa-fw fa-exclamation-triangle"></span>
-        </div>
-        <span class="pf-c-alert__title kc-feedback-text" id="security-motd"></span>
-    </div>
+    vals=sp.stats.norm.pdf(np.array([-2,-1,0,1,2])/width)/sp.stats.norm.pdf(0)
+    en_dist=np.outer(vals,vals)
 
-    <div id="kc-form">
-      <div id="kc-form-wrapper">
-         <div class="login-form-caption-large"><h2>Sign in with a CERN account</h2></div>
-            <form id="kc-form-login" onsubmit="login.disabled = true; return true;" action="https://auth.cern.ch/auth/realms/cern/login-actions/authenticate?session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo&amp;execution=cf009777-d4b7-40de-b2be-de5de077e998&amp;client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc" method="post">
-                <div class="form-group">
-                    <label for="username" class="pf-c-form__label pf-c-form__label-text">Username</label>
+    selct_=np.random.random(25).reshape(5,5)
+    mask = selct_> en_dist
+    en_fraction=np.array(en_dist)
+    en_fraction[mask]=0.0
+    en_fraction=en_fraction/np.sum(en_fraction)
+    en_fraction=(en_fraction + en_fraction*np.random.normal(scale=0.05) )*Energy
+    x0,y0=np.random.randint(11),np.random.randint(18*2)
+    if verbose >0:
+        print("Adding cluster at ",x0,y0," of energy ",Energy)
+    if verbose >2:
+        print("en_fraction\n",en_fraction)
+    for i in range(-2,2+1):
+        for j in range(-2,2+1):
+    #         print(i,j,x[2+i][2+j],en_fraction[i+2][j+2])
+            xval=x0+i
+            yval=y0+j
+            if xval >= 11:
+                xval-=11
+            if yval >= 18*2:
+                yval-=(18*2)
+            if verbose >1:
+                print("  > Adding cell at ",xval,yval," with ",en_fraction[i+2][j+2])
+            HF[xval][yval]+=en_fraction[i+2][j+2]
+            HF[xval][yval]=min(HF[xval][yval],256)
 
-                        <input id="username" class="pf-c-form-control" name="username" value=""  type="text" autofocus autocomplete="off"
-                        aria-label="Enter your CERN Username"
-                               aria-invalid=""
-                        />
-
-                        <span id="username-email-help" class="pf-c-form__helper-text pf-m-error required kc-feedback-text" aria-live="polite" style="display: none">
-                            Enter a CERN username. To use an email address, choose &quot;Home organization - eduGain&quot;, &quot;External email - Guest access&quot; or social accounts.
-                        </span>
-
-                    </div>
-
-                <div class="form-group">
-                    <label for="password" class="pf-c-form__label pf-c-form__label-text">Password</label>
-                    
-                    <input id="password" class="pf-c-form-control" name="password" type="password" autocomplete="off" aria-label="Enter your CERN password"
-                           aria-invalid=""
-                    />
+def getLinkStrings(HF):
+    link_strings=["" for i in range(18)]
+    for wIdx in range(18):
+        for i in range(11):
+            et=min(int(HF[i][2*wIdx]),256)
+            link_strings[wIdx]+=f"{et:10b}".replace(" ","0")
+        for i in range(11):
+            et=min(int(HF[i][2*wIdx+1]),256)
+            link_strings[wIdx]+=f"{et:10b}".replace(" ","0")
+    return link_strings        
 
 
-                </div>
+def writePatternFile(link_strings,ofname="output.links"):
+    with open(ofname,"w") as f:
+        print("writing out ",ofname)
+        header=[f"{i:^256}" for i in range(18) ]
+        f.write(" ".join(header))
+        for link_string in link_strings:
+            f.write("\n"+" ".join(link_string))
+
+        f.close()
 
 
 
-                  <div id="kc-form-buttons" class="form-group">
-                    <input type="hidden" id="id-hidden-input" name="credentialId" />
-                    <input class="pf-c-button pf-m-primary pf-m-block btn-lg" name="login" id="kc-login" type="submit" value="Sign In"/>
-                  </div>
+HF=np.zeros(shape=(11,18*2))
 
-                  <div class="form-group login-pf-settings">
-                    <div id="kc-form-options">
-                        </div>
-                        <div class="">
-                                <span><a href="https://users-portal.web.cern.ch/self-service-reset" id="resetPassUrl">Forgot Password?</a></span>
-                        </div>
-
-                  </div>
-                </form>
-
-                <div id="cern-providers" class="sub-providers">
-                <hr class="less-space-below">
-                <div class="login-form-caption-small"><h2>Or use another login method</h2></div>
-                    <ul class="pf-c-login__main-footer-links kc-social-links ">
-                        <a id="social-mfa" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/mfa/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-key" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">Two-factor authentication</span>
-                        </a>
-                        <a id="social-kerberos" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/kerberos/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-sign-in" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">Kerberos</span>
-                        </a>
-                    </ul>
-                </div>
-            <div class="reminder-oc5">By logging in, you agree to comply with the <a href="https://security.web.cern.ch/rules/en/index.shtml">CERN Computing Rules</a>, in particular OC5. CERN implements the measures necessary to ensure compliance.</div>
-        </div>
-
-        <div id="kc-social-providers" class=" ">
-        <div class="login-form-caption-large"><h2>Sign in with your email or organisation</h2></div>
-                <div id="user-providers" class="sub-providers">
-                    <ul class="pf-c-login__main-footer-links kc-social-links ">
-                        <a id="social-eduGAIN" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/eduGAIN/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-university" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">Home organisation - eduGAIN</span>
-                        </a>
-                        <a id="social-guest" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/guest/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-envelope" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">External email - Guest access</span>
-                        </a>
-                    </ul>
-                </div>
-
-                <div id="social-providers" class="sub-providers">
-                <hr class="more-space-below">
-                <div class="login-form-caption-large"><h2>Sign in with a social account</h2></div>
-                <div class="social-privacy-notice">By clicking on the buttons below, you consent to CERN's transfer of your login request to the social provider and to receive your account name, name and e-mail for authenticating you. See more details in our <a href="https://auth.docs.cern.ch/privacy-notice/#social-login-providers-privacy-notices" target="_blank">Privacy Notice</a>.</div>
-                    <ul class="pf-c-login__main-footer-links kc-social-links ">
-                        <a id="social-google" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/google/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-google" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">Google</span>
-                        </a>
-                        <a id="social-linkedin" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/linkedin/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-linkedin" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">LinkedIn</span>
-                        </a>
-                        <a id="social-github" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/github/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-github" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">GitHub</span>
-                        </a>
-                        <a id="social-facebook" class="pf-c-button pf-m-control pf-m-block kc-social-item kc-social-gray pf-l-grid__item"
-                                type="button" href="/auth/realms/cern/broker/facebook/login?client_id=gitlab-prod&amp;tab_id=15fj8xeIwhc&amp;session_code=ZGX4ORBfWtdQESy6iIsj9iA6Aq89zdTNWdCCQqomZyo">
-                                <i class="kc-social-provider-logo kc-social-gray fa fa-facebook" aria-hidden="true"></i>
-                                <span class="kc-social-provider-name kc-social-icon-text">Facebook</span>
-                        </a>
-                    </ul>
-                </div>
-        </div>
-    </div>
+#########     CLUSTER ENERGY DEFINITION ############
+fillCluster(HF,Energy=380.0,width=0.8,verbose=1)
+fillCluster(HF,Energy=130.0,width=0.8,verbose=1)
+fillCluster(HF,Energy=20.0,width=3,verbose=1)
+fillCluster(HF,Energy=3.0,width=10,verbose=1)
+for et in [10.0,12,30,23,50,30,60]:
+    fillCluster(HF,Energy=et,width=2,verbose=1)
+    
+####################################################
 
 
-        
+
+f,ax=plt.subplots(figsize=(14,6))
+HF_toPlot=np.array(HF)
+HF_toPlot[HF_toPlot < 0.5 ] = np.inf
+cbar=ax.matshow(HF_toPlot,cmap='Reds',vmax=251,vmin=0.0)
+_=ax.set_xticks(np.arange(0,36,2)-0.5,minor=False,labels=[])
+_=ax.set_xticks(np.arange(0,36,2)+0.5,minor=True,labels=np.arange(0,18))
+
+_=ax.set_yticks(np.arange(0,11,1),minor=True ,labels=np.arange(0,11,1)+30)
+_=ax.set_yticks(np.arange(-0.5,11,1),minor=False,labels=[])
+ax.grid(which='major',alpha=0.8)
+ax.grid(which='minor',axis='x',alpha=0.2)
+plt.colorbar(cbar,fraction=0.015, pad=0.01)
+ax.set_xlabel('link',fontsize=12,loc='right')
+ax.set_ylabel('$I\eta$',fontsize=12,loc='top')
+ax.xaxis.set_ticks_position('bottom')
+ofname=f"{args.tag}_seed{args.seed}.png"
+print("exporting image ",ofname)
+f.savefig(ofname,bbox_inches='tight')
 
 
-        </div>
-      </div>
+link_strings=getLinkStrings(HF)
 
-    </div>
-  </div>
-<div id='cernfooter'>
-    <div id='flex'>
-        <div class='col'></div>
-        <div class='col'>
-            <h2>Account</h2>
-            <ul>
-                <li><a href='https://users-portal.web.cern.ch' target='_blank'>Manage your account</a></li>
-            </ul>
-        </div>
-        <div class='col'>
-            <h2>Privacy</h2>
-            <ul>
-                <li><a href='https://auth.docs.cern.ch/privacy-notice/' target='_blank'>Privacy Notice</a></li>
-            </ul>
-        </div>
-        <div class='col'>
-            <h2>Support</h2>
-            <ul>
-                <li><a href='https://www.cern.ch/service-portal' target='_blank'>Service Desk - </a> <a href='tel:+41227677777'>+41 22 76 77777</a></li>
-                <li><a href='https://cern.service-now.com/service-portal?id=service_status_board' target='_blank'>Service Status</a></li>
-            </ul>
-        </div>
-        <div class='lastcol'>
-            <a href='https://home.cern' title='CERN' rel='CERN' target='_blank'><img border='0' src='/auth/resources/99854/login/keycloak-cern-theme/img/logo.svg' alt='CERN' class="cernlogo"></a>
-        </div>
+writePatternFile([link_strings],f"{args.tag}_seed{args.seed}.links")
 
-    </div>
-
-</div>
-</body>
-</html>
