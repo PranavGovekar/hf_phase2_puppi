@@ -1,4 +1,4 @@
-import scipy as sp
+from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
@@ -13,7 +13,7 @@ np.random.seed(args.seed)
 
 def fillCluster(HF,Energy=30.0,width=0.8,verbose=10):
 
-    vals=sp.stats.norm.pdf(np.array([-2,-1,0,1,2])/width)/sp.stats.norm.pdf(0)
+    vals=stats.norm.pdf(np.array([-2,-1,0,1,2])/width)/stats.norm.pdf(0)
     en_dist=np.outer(vals,vals)
 
     selct_=np.random.random(25).reshape(5,5)
@@ -115,13 +115,12 @@ plt.colorbar(cbar,fraction=0.015, pad=0.01)
 ax.set_xlabel('link',fontsize=12,loc='right')
 ax.set_ylabel('$I\eta$',fontsize=12,loc='top')
 ax.xaxis.set_ticks_position('bottom')
-ofname=f"{args.tag}_seed{args.seed}.png"
+ofname=f"../data/png/{args.tag}_seed{args.seed}.png"
 print("exporting image ",ofname)
 f.savefig(ofname,bbox_inches='tight')
 
 
 link_strings=getLinkStrings(HF)
-writePatternFile([link_strings],f"{args.tag}_seed{args.seed}.links")
+writePatternFile([link_strings],f"../data/inputPatterFiles/{args.tag}_seed{args.seed}.links")
 
-writeDescriptionFile(HF,f"{args.tag}_seed{args.seed}.csv")
-
+writeDescriptionFile(HF,f"../data/csv/{args.tag}_seed{args.seed}.csv")
