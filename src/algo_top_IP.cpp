@@ -45,6 +45,7 @@ for(loop j=0; j<TOWERS_IN_PHI; j=j+2){
 
 void clustrize( hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] , PFcluster  Clusters[N_PF_CLUSTERS]  )
 {
+	#ifndef __SYNTHESIS__
 		for(loop phiI=0;phiI<TOWERS_IN_PHI; phiI++)
 		{
 			std::cout<<std::setw(5)<<phiI;	
@@ -58,6 +59,7 @@ void clustrize( hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] , PFcluster  Clus
 			}
 			std::cout<<"  <--"<<etaI<<"\n";
 		}
+	#endif
 	for(loop clusIdx=0 ; clusIdx < 9 ; clusIdx++)
 	{
 		uint16_t etaC=0,phiC=0,etmax=0;
@@ -103,13 +105,14 @@ void clustrize( hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] , PFcluster  Clus
 			en = en + HFTowers[etaC][phiL].energy ;
 			en = en + HFTowers[etaC][phiH].energy ;
 			
+			#ifndef __SYNTHESIS__	
 			std::cout<<"Cluster Obtained with E = "<<en<<", center = ("<<etaC<<","<<phiC<<","<<etmax<<")\n";
 			std::cout<<"     CELLS > "
 				 <<" ("<<etaL<<","<<phiL<<","<<HFTowers[etaL][phiL].energy<<"),("<<etaL<<","<<phiC<<","<<HFTowers[etaL][phiC].energy<<"),("<<etaL<<","<<phiH<<","<<HFTowers[etaL][phiL].energy<<")"
                                  <<",("<<etaC<<","<<phiL<<","<<HFTowers[etaC][phiL].energy<<"),("<<etaC<<","<<phiH<<","<<HFTowers[etaC][phiC].energy<<")"                  
 				 <<",("<<etaH<<","<<phiL<<","<<HFTowers[etaH][phiL].energy<<"),("<<etaH<<","<<phiC<<","<<HFTowers[etaH][phiC].energy<<"),("<<etaH<<","<<phiH<<","<<HFTowers[etaH][phiH].energy<<")"
 				 <<"\n";
-			
+			#endif
 			HFTowers[etaC][phiC].energy = 0 ;  
 			HFTowers[etaC][phiL].energy = 0 ;
                 	HFTowers[etaC][phiH].energy = 0 ;
