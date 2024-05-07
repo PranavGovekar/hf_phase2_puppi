@@ -1,7 +1,6 @@
 #ifndef ALGO_TOPIP1_H
 #define ALGO_TOPIP1_H
 
-#include "linpuppi.h"
 #include <iostream>
 #include "ap_int.h"
 #include <algorithm>
@@ -9,12 +8,6 @@
 #include <stdint.h>
 #include <hls_stream.h>
 #include<hls_task.h>
-
-#include "DataFormats/L1TParticleFlow/interface/layer1_objs.h"
-#include "DataFormats/L1TParticleFlow/interface/pf.h"
-#include "DataFormats/L1TParticleFlow/interface/puppi.h"
-#include "../../dataformats/layer1_multiplicities.h"
-#include "linpuppi_bits.h"
 
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  36
@@ -128,35 +121,5 @@ class hftower{
 
 
 void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<LINK_WIDTH> link_out[N_OUTPUT_LINKS]);
-
-//void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<LINK_WIDTH> link_out[N_OUTPUT_LINKS]);
-
-void Regionizer(const ap_uint<LINK_WIDTH> link_center,
-			const ap_uint<LINK_WIDTH> link_left,
-			const ap_uint<LINK_WIDTH> link_right,
-			const ap_uint<3> sector,
-			l1ct::HadCaloObj puppiIn[NCALO]);
-
-void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
-			ap_uint<LINK_WIDTH> &link_out);
-
-void fillCenterLink(const ap_uint<LINK_WIDTH> &link,
-					const l1ct::PFRegion &region,
-					l1ct::HadCaloObj puppiIn[NCALO]);
-
-void fillExtra(	const ap_uint<LINK_WIDTH> &link_left,
-				const ap_uint<LINK_WIDTH> &link_right,
-				const l1ct::PFRegion &region,
-				const ap_uint<3> N_REGION,
-				l1ct::HadCaloObj puppiIn[NCALO]);
-
-void mergeSort(l1ct::HadCaloObj leftStream[N_EXTRA],
-			l1ct::HadCaloObj rightStream[N_EXTRA],
-			l1ct::HadCaloObj puppiIn[NCALO]);
-
-void getInside(const ap_uint<LINK_WIDTH> &link,
-				const int &phi_offset,
-				const l1ct::PFRegion &region,
-				l1ct::HadCaloObj outstream[N_EXTRA]);
 
 #endif

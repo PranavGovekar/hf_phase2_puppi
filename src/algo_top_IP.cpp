@@ -52,7 +52,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<LINK_WIDTH>
         hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] ;
         #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
 
-processInputLinks(link_in, HFTowers) ;
+	processInputLinks(link_in, HFTowers) ;
 
 
         ap_uint<10> start ;
