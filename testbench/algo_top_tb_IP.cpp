@@ -81,7 +81,9 @@ int main() {
     			cout << "  > tower  [ "
     			 << " phi slice : " << i<<" | "<< " eta slice : "<<j<<" ] "
 			 <<" energy  :" <<  HFTowers.energy<< endl ;
-        	}
+        	break;
+		}
+        	break;
           }
     }
 

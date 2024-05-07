@@ -11,9 +11,11 @@
 
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  36
+#define N_PF_CLUSTERS 20
 
 #define TOWERS_IN_ETA 12
 #define TOWERS_IN_PHI 36
+#define MIN_CLUSTER_SEED_ENERGY 5
 
 #define LINK_WIDTH 220
 
