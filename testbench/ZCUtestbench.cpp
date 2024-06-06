@@ -2,8 +2,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <stdlib.h>
-#include <linpuppi.h>
-
 
 int main(){
 	loop start, end ;

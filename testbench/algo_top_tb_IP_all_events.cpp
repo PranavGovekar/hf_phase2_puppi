@@ -2,7 +2,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <stdlib.h>
-#include <linpuppi.h>
 
 #define N_TEST_FILES 1
 

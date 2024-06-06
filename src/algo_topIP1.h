@@ -1,20 +1,20 @@
 #ifndef ALGO_TOPIP1_H
 #define ALGO_TOPIP1_H
 
-#include "linpuppi.h"
+#include "firmware/linpuppi.h"
 #include <iostream>
 #include "ap_int.h"
 #include <algorithm>
 #include <utility>
 #include <stdint.h>
 #include <hls_stream.h>
-#include<hls_task.h>
+#include <hls_task.h>
 
-#include "DataFormats/L1TParticleFlow/interface/layer1_objs.h"
-#include "DataFormats/L1TParticleFlow/interface/pf.h"
-#include "DataFormats/L1TParticleFlow/interface/puppi.h"
-#include "../../dataformats/layer1_multiplicities.h"
-#include "linpuppi_bits.h"
+#include "layer1_objs.h"
+#include "pf.h"
+#include "puppi.h"
+#include "layer1_multiplicities.h"
+#include "firmware/linpuppi_bits.h"
 
 #define N_INPUT_LINKS   6
 #define N_OUTPUT_LINKS  6
