@@ -1,224 +1,160 @@
 #include "algo_topIP1.h"
 
-void Regionizer(const ap_uint<576> link_center,
-			const ap_uint<576> link_left,
-			const ap_uint<576> link_right,
-			const ap_uint<3> sector,
-			l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	#pragma HLS PIPELINE
 
-	l1ct::PFRegion region;
-    region.hwEtaCenter = l1ct::glbeta_t(12);
-    region.hwEtaHalfWidth = l1ct::eta_t(12);
-    region.hwEtaExtra = l1ct::eta_t(0);
-    region.hwPhiExtra = l1ct::phi_t(2);
-    region.hwPhiHalfWidth = l1ct::phi_t(6);
-    region.hwPhiCenter = l1ct::glbphi_t((12*sector)+5);
+void processInputLinks(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI]){
+	#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+  #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
 
-	fillCenterLink(link_center, region, puppiIn);
-	fillExtra(link_left, link_right, region, sector, puppiIn);
-
-#ifndef __SYNTHESIS__
-	for( loop j=0 ;j < NCALO ; j++){
-		std::cout<<"HCALOobj "<<" , "<<j
-		  <<" : phi "<<puppiIn[j].hwPhi
-		  <<" : eta "<<puppiIn[j].hwEta
-		  <<" : et  "<<puppiIn[j].hwPt
-		  <<"\n";
-	}
-#endif
-
+for(loop j=0; j<TOWERS_IN_PHI; j=j+2){
+    #pragma HLS UNROLL
+    for(loop i=0; i<TOWERS_IN_ETA-1; i++){
+    #pragma HLS UNROLL
+      ap_uint<10> start   = i*10;
+      ap_uint<10> end = start + 9;
+      HFTowers[i][j] = hftower(link_in[j/2].range(end, start));
+  }
+    for(loop i=0; i<TOWERS_IN_ETA-1; i++){
+    #pragma HLS UNROLL
+      ap_uint<10> start   = i*10+110;
+      ap_uint<10> end = start + 9;
+      HFTowers[i][j+1] = hftower(link_in[j/2].range(end, start));
+  }
 }
 
+    for(loop j=0; j<TOWERS_IN_PHI; j=j+2){
+    #pragma HLS UNROLL
+    hftower A10 = HFTowers[TOWERS_IN_ETA-2][j] ;
+    hftower B10 = HFTowers[TOWERS_IN_ETA-2][j+1] ;
 
-void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
-			ap_uint<576> &link_out
-			){
-	const ap_uint<8> BW = 64;
-	ap_uint<12> start = 0;
-	ap_uint<576> temp_link;
 
-    for(loop idx=0; idx<NNEUTRALS; idx++) {
-    	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
+    ap_uint<8> halfA = A10.energy >> 1 ;
+    ap_uint<8> halfB = B10.energy >> 1 ;
 
-        start = start + BW;
-    }
 
-    link_out = temp_link;
+    A10.energy = halfA ;
+    B10.energy = halfB ;
+
+
+    HFTowers[TOWERS_IN_ETA-2][j] = A10;
+    HFTowers[TOWERS_IN_ETA-2][j+1] = A10;
+
+    HFTowers[TOWERS_IN_ETA-1][j] = B10;
+    HFTowers[TOWERS_IN_ETA-1][j+1] = B10;
+  }
 }
 
-void fillCenterLink(const ap_uint<576> &link,
-					const l1ct::PFRegion &region,
-					l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	ap_uint<576> word = link;
-	const int eta_offset = region.hwEtaCenter;
-	const int phi_offset = region.hwPhiCenter;
-
-	for(loop j=0; j<N_PF_LINK; j++) {
-		puppiIn[j].hwPt = word.range(11,0);
-		puppiIn[j].hwEta = (word.range(16,12) - eta_offset);
-		puppiIn[j].hwPhi = (word.range(24,17) - phi_offset);
-		word=word>>64;
-
-	}
-}
-
-void fillExtra(	const ap_uint<576> &link_left,
-				const ap_uint<576> &link_right,
-				const l1ct::PFRegion &region,
-				const ap_uint<3> N_REGION,
-				l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	ap_uint<3> region_l;
-	ap_uint<3> region_r;
-	if (N_REGION==0){
-		region_l = 5;
-	}
-	else {
-		region_l = N_REGION-1;
-	}
-	if (N_REGION==5){
-		region_r = 0;
-	}
-	else {
-		region_r = N_REGION+1;
-	}
-
-	int phi_offset_l = 12*N_REGION + 5;
-	int phi_offset_r = 12*N_REGION + 5;
-
-	if (  N_REGION == 0              and    region_l == (5)) phi_offset_l+=72;
-	if (  N_REGION == (5)  and    region_r == 0                ) phi_offset_r-=72;
-
-	l1ct::HadCaloObj leftStream[N_EXTRA];
-	l1ct::HadCaloObj rightStream[N_EXTRA];
-
-	for(loop idx=0; idx<N_EXTRA; idx++) {
-		leftStream[idx].clear();
-		rightStream[idx].clear();
-	}
-
-	getInside(link_left, phi_offset_l, region, leftStream);
-	getInside(link_right, phi_offset_r, region, rightStream);
-
-	mergeSort(leftStream, rightStream, puppiIn);
-
-}
-
-void mergeSort(	l1ct::HadCaloObj leftStream[N_EXTRA],
-				l1ct::HadCaloObj rightStream[N_EXTRA],
-				l1ct::HadCaloObj puppiIn[NCALO]
-	){
-
-	l1ct::HadCaloObj left;
-	l1ct::HadCaloObj right;
-
-	int idx_left = 0;
-	int idx_right = 0;
-
-	left = leftStream[idx_left];
-	right = rightStream[idx_right];
-
-	for(loop idx=0; idx<N_EXTRA; idx++) {
-		if(left.hwPt < right.hwPt){
-			puppiIn[NNEUTRALS+idx] = right;
-			idx_right = idx_right + 1;
-			right = rightStream[idx_right];
+void clustrize( hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] , PFcluster  Clusters[N_PF_CLUSTERS]  )
+{
+	#ifndef __SYNTHESIS__
+		for(loop phiI=0;phiI<TOWERS_IN_PHI; phiI++)
+		{
+			std::cout<<std::setw(5)<<phiI;	
 		}
-		else {
-			puppiIn[NNEUTRALS+idx] = left;
-			idx_left = idx_left + 1;
-			left = leftStream[idx_left];
+		std::cout<<"  <--Phi"<<"\n";
+	 	for(loop etaI=0;etaI<TOWERS_IN_ETA ; etaI++)
+	 	{
+			for(loop phiI=0;phiI<TOWERS_IN_PHI; phiI++)
+			{
+				std::cout<<std::setw(5)<< HFTowers[etaI][phiI].energy;	
+			}
+			std::cout<<"  <--"<<etaI<<"\n";
+		}
+	#endif
+	for(loop clusIdx=0 ; clusIdx < 9 ; clusIdx++)
+	{
+		uint16_t etaC=0,phiC=0,etmax=0;
+	 	for(loop etaI=0;etaI<TOWERS_IN_ETA ; etaI++)
+	 	{
+			for(loop phiI=0;phiI<TOWERS_IN_PHI ; phiI++)
+			{	
+				if( (etmax < HFTowers[etaI][phiI].energy ) and ( HFTowers[etaI][phiI].energy > MIN_CLUSTER_SEED_ENERGY) )
+				{
+					etmax=HFTowers[etaI][phiI].energy;
+					etaC=etaI; phiC=phiI;
+				}
+			}
+		}
+		if( etmax > 0)
+		{
+			Clusters[clusIdx].Eta= etaC;
+			Clusters[clusIdx].Phi= phiC;
+			uint16_t en=etmax;
+			uint16_t etaL=etaC-1;
+			uint16_t etaH=etaC+1;
+			//std::cout<<" Cluster centers : "<<etaC<<" , "<<phiC<<"\n";
+			if( etaC == 0  ) etaL = 200;
+			if( etaC == TOWERS_IN_ETA-1  ) etaH = 200;
+			uint16_t phiL=phiC-1;
+			uint16_t phiH=phiC+1;
+			if( phiC == 0  ) phiL = TOWERS_IN_PHI-1;
+			if( phiC == TOWERS_IN_PHI-1  ) phiH =0 ;
+			
+			if(etaC>0)
+			{
+				en = en + HFTowers[etaL][phiL].energy ; 
+				en = en + HFTowers[etaL][phiC].energy ;
+				en = en + HFTowers[etaL][phiH].energy ;
+			}
+			if(etaC<TOWERS_IN_ETA-1)
+			{
+				en = en + HFTowers[etaH][phiL].energy ;
+				en = en + HFTowers[etaH][phiC].energy ;
+				en = en + HFTowers[etaH][phiH].energy ;
+			}
+
+			en = en + HFTowers[etaC][phiL].energy ;
+			en = en + HFTowers[etaC][phiH].energy ;
+			
+			#ifndef __SYNTHESIS__	
+			std::cout<<"Cluster Obtained with E = "<<en<<", center = ("<<etaC<<","<<phiC<<","<<etmax<<")\n";
+			std::cout<<"     CELLS > "
+				 <<" ("<<etaL<<","<<phiL<<","<<HFTowers[etaL][phiL].energy<<"),("<<etaL<<","<<phiC<<","<<HFTowers[etaL][phiC].energy<<"),("<<etaL<<","<<phiH<<","<<HFTowers[etaL][phiL].energy<<")"
+                                 <<",("<<etaC<<","<<phiL<<","<<HFTowers[etaC][phiL].energy<<"),("<<etaC<<","<<phiH<<","<<HFTowers[etaC][phiC].energy<<")"                  
+				 <<",("<<etaH<<","<<phiL<<","<<HFTowers[etaH][phiL].energy<<"),("<<etaH<<","<<phiC<<","<<HFTowers[etaH][phiC].energy<<"),("<<etaH<<","<<phiH<<","<<HFTowers[etaH][phiH].energy<<")"
+				 <<"\n";
+			#endif
+			HFTowers[etaC][phiC].energy = 0 ;  
+			HFTowers[etaC][phiL].energy = 0 ;
+                	HFTowers[etaC][phiH].energy = 0 ;
+			if(etaC>0)
+			{
+			HFTowers[etaL][phiL].energy = 0 ;  
+                	HFTowers[etaL][phiC].energy = 0 ;
+                	HFTowers[etaL][phiH].energy = 0 ;
+			}
+			if(etaC<TOWERS_IN_ETA-1)
+			{
+                	HFTowers[etaH][phiL].energy = 0 ;
+                	HFTowers[etaH][phiC].energy = 0 ;
+                	HFTowers[etaH][phiH].energy = 0 ;
+                	}
 		}
 	}
 }
 
-void getInside(const ap_uint<576> &link,
-				const int &phi_offset,
-				const l1ct::PFRegion &region,
-				l1ct::HadCaloObj outstream[N_EXTRA]
-				){
-	ap_uint<576> word = link;
-	int count = 0;
-
-	for(loop j=0; j<N_PF_LINK; j++) {
-		ap_uint<8>  ETA = (word.range(16,12) - 12);
-		ap_int<9>   PHI = (word.range(24,17) - phi_offset);
-
-		bool isInside = region.isInside(ETA, PHI);
-		if(isInside){
-			outstream[count].hwPt = word.range(11,0);
-			outstream[count].hwEta = ETA;
-			outstream[count].hwPhi = PHI;
-
-			count = count + 1;
-		}
-		if (count == N_EXTRA) break;
-		word=word>>64;
-	}
-}
-
-
-void algo_topIP1(
-    ap_uint<576> link_in[N_INPUT_LINKS],
-    ap_uint<576> link_out[N_OUTPUT_LINKS]
-    ) {
-#pragma HLS PIPELINE II=6
+void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<LINK_WIDTH> link_out[N_OUTPUT_LINKS]){
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
+#pragma HLS PIPELINE II=9
 #pragma HLS INTERFACE ap_ctrl_hs port=return
 
-	ap_uint<576> link_in_1[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in_1 complete dim=0
-	ap_uint<576> link_in_2[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in_2 complete dim=0
-	for(int idx=0; idx < N_INPUT_LINKS; idx++) {
-#pragma HLS UNROLL
-		link_in_1[idx] = link_in[idx];
-		link_in_2[idx] = link_in[idx];
-	}
+        hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI] ;
+        #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
 
-    l1ct::PFRegion region[N_SECTORS];
-regions_init:
-    for(int i=0 ; i < N_SECTORS ; i++) {
-        region[i].hwEtaCenter = l1ct::glbeta_t(12);
-        region[i].hwEtaHalfWidth = l1ct::eta_t(12);
-        region[i].hwEtaExtra = l1ct::eta_t(0);
-        region[i].hwPhiExtra = l1ct::phi_t(2);
-        region[i].hwPhiHalfWidth = l1ct::phi_t(6);
-        region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
-    }
+	processInputLinks(link_in, HFTowers) ;
+	
+	PFcluster Clusters[N_PF_CLUSTERS];
+	clustrize(HFTowers,Clusters);
 
-	ap_uint<3> left;
-	ap_uint<3> right;
+        ap_uint<10> start ;
+        ap_uint<10> end ;
 
-	l1ct::HadCaloObj puppiIn[N_SECTORS][NCALO];
-	l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS];
-
-    for(int idx=0; idx < N_SECTORS; idx++) {
-    	if (idx==0){
-    		left = 5;
-    	}
-    	else {
-    		left = idx-1;
-    	}
-    	if (idx==5){
-    		right = 0;
-    	}
-    	else {
-    		right = idx+1;
-    	}
-
-    	Regionizer(link_in[idx], link_in_1[left], link_in_2[right], idx, puppiIn[idx]);
-	}
-
-    for(int i=0; i < N_SECTORS; i++) {
-    	fwdlinpuppi(region[i], puppiIn[i], pfselne[i]);
-    	pack(pfselne[i], link_out[i]);
-    }
+        for(loop j=0; j<TOWERS_IN_PHI; j++)
+          {
+          	for(loop i=0; i<TOWERS_IN_ETA; i++)
+		{
+		start=i*10 ; end=start+9;
+		link_out[j].range(end, start) = HFTowers[i][j].gettower() ;
+	  }}
 }
-
-
 
