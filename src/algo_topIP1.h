@@ -1,17 +1,20 @@
 #ifndef ALGO_TOPIP1_H
 #define ALGO_TOPIP1_H
 
+#include "firmware/linpuppi.h"
 #include <iostream>
 #include "ap_int.h"
 #include <algorithm>
 #include <utility>
 #include <stdint.h>
 #include <hls_stream.h>
-#include<hls_task.h>
+#include <hls_task.h>
 
-#define N_INPUT_LINKS  18
-#define N_OUTPUT_LINKS  36
-#define N_PF_CLUSTERS 20
+#include "layer1_objs.h"
+#include "pf.h"
+#include "puppi.h"
+#include "layer1_multiplicities.h"
+#include "firmware/linpuppi_bits.h"
 
 #define TOWERS_IN_ETA 12
 #define TOWERS_IN_PHI 36

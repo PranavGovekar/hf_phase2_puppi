@@ -46,10 +46,10 @@ def getLinkStrings(HF):
     for wIdx in range(18):
         for i in range(11):
             et=min(int(HF[i][2*wIdx]),256)
-            link_strings[wIdx]+=f"{et:10b}".replace(" ","0")
+            link_strings[wIdx]=f"{et:10b}".replace(" ","0") + link_strings[wIdx]
         for i in range(11):
             et=min(int(HF[i][2*wIdx+1]),256)
-            link_strings[wIdx]+=f"{et:10b}".replace(" ","0")
+            link_strings[wIdx]=f"{et:10b}".replace(" ","0") + link_strings[wIdx]
     return link_strings        
 
 
