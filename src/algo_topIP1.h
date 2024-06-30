@@ -17,10 +17,16 @@
 #include "firmware/linpuppi_bits.h"
 
 #define TOWERS_IN_ETA 12
-#define TOWERS_IN_PHI 36
+#define TOWERS_IN_PHI 72
+#define EXTRA_IN_PHI 2
+#define EXTRA_IN_ETA 1
 #define MIN_CLUSTER_SEED_ENERGY 5
 
 #define LINK_WIDTH 220
+
+#define N_INPUT_LINKS  18
+#define N_OUTPUT_LINKS  36
+#define N_PF_CLUSTERS 15
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8
@@ -125,6 +131,6 @@ class hftower{
 };
 
 
-void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<LINK_WIDTH> link_out[N_OUTPUT_LINKS]);
+void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[6]);
 
 #endif
