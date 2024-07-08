@@ -18,7 +18,7 @@
 
 #define TOWERS_IN_ETA 12
 #define TOWERS_IN_PHI 72
-#define EXTRA_IN_PHI 2
+#define EXTRA_IN_PHI 4
 #define EXTRA_IN_ETA 1
 #define MIN_CLUSTER_SEED_ENERGY 5
 
@@ -26,13 +26,17 @@
 
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  36
-#define N_PF_CLUSTERS 15
+#define N_PF_CLUSTERS 10
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8
 #define N_SECTORS 6
 #define N_PF 48
 #define N_EXTRA (NCALO - NNEUTRALS)
+
+#define NTOWER_IN_ETA_PER_SECTOR (TOWERS_IN_ETA + EXTRA_IN_ETA*2)
+#define NTOWER_IN_PHI_PER_SECTOR ((TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2)
+#define LINKS_PER_REGION ((N_INPUT_LINKS/N_SECTORS) + 2)
 
 using namespace std;
 typedef ap_uint<10> loop;
