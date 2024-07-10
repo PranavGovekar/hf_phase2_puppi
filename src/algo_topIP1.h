@@ -26,11 +26,11 @@
 
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  36
-#define N_PF_CLUSTERS 10
+#define N_PF_CLUSTERS 4
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8
-#define N_SECTORS 6
+#define N_SECTORS 18
 #define N_PF 48
 #define N_EXTRA (NCALO - NNEUTRALS)
 
