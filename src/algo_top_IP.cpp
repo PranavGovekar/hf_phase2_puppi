@@ -87,23 +87,71 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
 #endif
 }
 
-// linear search
+void findMaxEnergyTowerInEta(hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC){
+	hftower tempArray[16];
+	ap_uint<4> index[16];
+
+	for(loop i=0; i<12; i++){
+		tempArray[i] = EtaTowers[i];
+		index[i] = i;
+	}
+
+	for(loop i=16; i>1; i=(i/2)){
+		for(loop j=0; j> i/2; j++){
+			if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy){
+				index[j] = index[(j*2)+1];
+			}
+			else{
+				index[j] = index[j*2];
+			}
+		}
+	}
+
+	etaC = index[0];
+}
+
+void findMaxEnergyTowerInPhi(hftower PhiTowers[6], ap_uint<5>& phiC){
+	hftower tempArray[8];
+	ap_uint<4> index[8];
+
+	for(loop i=0; i<6; i++){
+		tempArray[i] = EtaTowers[i];
+		index[i] = i;
+	}
+
+	for(loop i=8; i>1; i=(i/2)){
+		for(loop j=0; j> i/2; j++){
+			if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy){
+				index[j] = index[(j*2)+1];
+			}
+			else{
+				index[j] = index[j*2];
+			}
+		}
+	}
+
+	phiC = index[0];
+}
+
 void findMaxEnergyTower(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2],
 				ap_uint<5>& etaC,
 				ap_uint<8>& phiC){
-
+//3,4,5,6,7,8
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
-	ap_uint<8> etmax = MIN_CLUSTER_SEED_ENERGY;
 
-    for(loop eta = EXTRA_IN_ETA; eta < NTOWER_IN_ETA_PER_SECTOR - 1; eta++) {
-        for(loop phi = (EXTRA_IN_PHI-1); phi < NTOWER_IN_PHI_PER_SECTOR - (EXTRA_IN_PHI-1); phi++) {
-            if(etmax < HFRegion[eta][phi].energy) {
-                etmax = HFRegion[eta][phi].energy;
-                etaC = eta;
-                phiC = phi;
-            }
-        }
-    }
+	hftower towersPhi[6];
+	ap_uint<8> tempPhi;
+	for(loop phi = 3; phi < 9; phi++) {
+		hftower towersEta[12];
+		for(loop eta = 0; eta < 12; eta++) {
+			towersEta[eta] = HFRegion[eta][phi];
+		}
+		findMaxEnergyTowerInEta(towersEta, towersPhi[phi-3]);
+	}
+	findMaxEnergyTowerInPhi(towersPhi, tempPhi);
+
+	etaC = towersPhi[tempPhi];
+	phiC = tempPhi + 3;
 }
 
 // Function to form the cluster and zero out the tower energies
