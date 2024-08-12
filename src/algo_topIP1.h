@@ -7,8 +7,6 @@
 #include <algorithm>
 #include <utility>
 #include <stdint.h>
-#include <hls_stream.h>
-#include <hls_task.h>
 
 #include "layer1_objs.h"
 #include "pf.h"

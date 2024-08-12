@@ -87,17 +87,22 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
 #endif
 }
 
-void findMaxEnergyTowerInEta(hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC){
+void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC){
+#pragma HLS PIPELINE II=1
 	hftower tempArray[16];
-	ap_uint<4> index[16];
+	ap_uint<5> index[16];
+
+#pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
+#pragma HLS ARRAY_PARTITION variable=index complete dim=0
 
 	for(loop i=0; i<12; i++){
 		tempArray[i] = EtaTowers[i];
 		index[i] = i;
 	}
 
+
 	for(loop i=16; i>1; i=(i/2)){
-		for(loop j=0; j> i/2; j++){
+		for(loop j=0; j < i/2; j++){
 			if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy){
 				index[j] = index[(j*2)+1];
 			}
@@ -110,17 +115,22 @@ void findMaxEnergyTowerInEta(hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC)
 	etaC = index[0];
 }
 
-void findMaxEnergyTowerInPhi(hftower PhiTowers[6], ap_uint<5>& phiC){
+void findMaxEnergyTowerInPhi(const hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2],
+								const ap_uint<5> etaCenters[6], ap_uint<8>& phiC){
+#pragma HLS PIPELINE II=1
 	hftower tempArray[8];
 	ap_uint<4> index[8];
 
+#pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
+#pragma HLS ARRAY_PARTITION variable=index complete dim=0
+
 	for(loop i=0; i<6; i++){
-		tempArray[i] = EtaTowers[i];
+		tempArray[i] = HFRegion[etaCenters[i]][i+3];
 		index[i] = i;
 	}
 
 	for(loop i=8; i>1; i=(i/2)){
-		for(loop j=0; j> i/2; j++){
+		for(loop j=0; j < i/2; j++){
 			if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy){
 				index[j] = index[(j*2)+1];
 			}
@@ -139,16 +149,19 @@ void findMaxEnergyTower(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS
 //3,4,5,6,7,8
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
-	hftower towersPhi[6];
+	ap_uint<5> towersPhi[6];
+#pragma HLS ARRAY_PARTITION variable=towersPhi complete dim=0
 	ap_uint<8> tempPhi;
-	for(loop phi = 3; phi < 9; phi++) {
+	for(ap_uint<5> phi = 3; phi < 9; phi++) {
 		hftower towersEta[12];
+#pragma HLS ARRAY_PARTITION variable=towersEta complete dim=0
 		for(loop eta = 0; eta < 12; eta++) {
 			towersEta[eta] = HFRegion[eta][phi];
 		}
 		findMaxEnergyTowerInEta(towersEta, towersPhi[phi-3]);
 	}
-	findMaxEnergyTowerInPhi(towersPhi, tempPhi);
+
+	findMaxEnergyTowerInPhi(HFRegion, towersPhi, tempPhi);
 
 	etaC = towersPhi[tempPhi];
 	phiC = tempPhi + 3;
@@ -216,12 +229,15 @@ void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[3],
         ap_uint<12> etaSum = 0;
 
         findMaxEnergyTower(HFRegion, etaC, phiC);
-        formClusterAndZeroOut(HFRegion, etaC, phiC, etaSum);
 
-        if(phiC > 3 && phiC < 8){
-            Clusters[cluster].Eta = etaC;
-            Clusters[cluster].Phi = phiC;
-            Clusters[cluster].ET = etaSum;
+        if(HFRegion[etaC][phiC].energy > MIN_CLUSTER_SEED_ENERGY){
+			formClusterAndZeroOut(HFRegion, etaC, phiC, etaSum);
+
+			if(phiC > 3 && phiC < 8){
+				Clusters[cluster].Eta = etaC;
+				Clusters[cluster].Phi = phiC;
+				Clusters[cluster].ET = etaSum;
+			}
         }
     }
 
@@ -259,8 +275,8 @@ void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sect
     for (int cluster = 0; cluster < 8; cluster++) {
         #pragma HLS UNROLL
         if (Clusters[cluster].ET > 0) {
-            Clusters[cluster].Eta += -EXTRA_IN_ETA;
-            Clusters[cluster].Phi = (TOWERS_IN_PHI / N_SECTORS) * sector + (Clusters[cluster].Phi - EXTRA_IN_PHI);
+//            Clusters[cluster].Eta += -EXTRA_IN_ETA;
+//            Clusters[cluster].Phi = (TOWERS_IN_PHI / N_SECTORS) * sector + (Clusters[cluster].Phi - EXTRA_IN_PHI);
 
             link_out_sector.range(end, start) = Clusters[cluster].data();
         } else {
@@ -337,6 +353,8 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 			clustrizer(regionLinks[(link*3) + sector], tempClusters);
 
 			for(loop i=0; i<N_PF_CLUSTERS; i++){
+				tempClusters[i].Eta += -EXTRA_IN_ETA;
+				tempClusters[i].Phi = (tempClusters[i].Phi - 4) + ((link*3)+sector)*4;
 				Clusters[link][(sector*N_PF_CLUSTERS)+i] = tempClusters[i];
 			}
 		}
