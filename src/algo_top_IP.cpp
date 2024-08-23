@@ -57,7 +57,7 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
 // this function takes in 3 links and makes a region of 3 wedges (1 + 2 extra) i.e eta:(12+2) and phi:(4+8)
 // this does not affect the seed searching because only the required area is searched. search region is eta:(12) and phi:(4+2)
 void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
-	hftower HFRegions[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2]){
+	hftower HFRegions[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR]){
 
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 #pragma HLS ARRAY_PARTITION variable=HFRegions complete dim=0
@@ -77,8 +77,8 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
 	}
 
 #ifndef __SYNTHESIS__
-	for(loop eta=0; eta<TOWERS_IN_ETA + EXTRA_IN_ETA*2; eta++){
-		for(loop phi=0;phi<(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2; phi++) {
+	for(loop eta=0; eta<NTOWER_IN_ETA_PER_SECTOR; eta++){
+		for(loop phi=0;phi<NTOWER_IN_PHI_PER_SECTOR; phi++) {
 			std::cout<< "\t" << HFRegions[eta][phi].energy;
 		}
 		std::cout << endl;
@@ -115,7 +115,7 @@ void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>&
 	etaC = index[0];
 }
 
-void findMaxEnergyTowerInPhi(const hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2],
+void findMaxEnergyTowerInPhi(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
 								const ap_uint<5> etaCenters[6], ap_uint<8>& phiC){
 #pragma HLS PIPELINE II=1
 	hftower tempArray[8];
@@ -143,10 +143,9 @@ void findMaxEnergyTowerInPhi(const hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA
 	phiC = index[0];
 }
 
-void findMaxEnergyTower(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2],
+void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
 				ap_uint<5>& etaC,
 				ap_uint<8>& phiC){
-//3,4,5,6,7,8
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
 	ap_uint<5> towersPhi[6];
@@ -168,7 +167,7 @@ void findMaxEnergyTower(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS
 }
 
 // Function to form the cluster and zero out the tower energies
-void formClusterAndZeroOut(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2],
+void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
 		ap_uint<5> etaC,
 		ap_uint<8> phiC,
 		ap_uint<12>& etaSum){
@@ -197,24 +196,24 @@ void formClusterAndZeroOut(hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOW
 }
 
 // Main clustrizer function
-void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[3],
+void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
 		PFcluster Clusters[N_PF_CLUSTERS]){
 
 #pragma HLS PIPELINE
 #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
 
-	hftower HFRegion[TOWERS_IN_ETA + EXTRA_IN_ETA*2][(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2];
+	hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR];
 	#pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
 	makeRegion(regionLinks, HFRegion);
 
 #ifndef __SYNTHESIS__
-	for(loop phiI=0;phiI<(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2; phiI++){
+	for(loop phiI=0;phiI<NTOWER_IN_PHI_PER_SECTOR; phiI++){
 		std::cout<<std::setw(5)<<phiI;
 	}
 	std::cout<<"  <--Phi"<<"\n";
-	for(loop etaI=0;etaI<TOWERS_IN_ETA + EXTRA_IN_ETA*2; etaI++){
-		for(loop phiI=0;phiI<(TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2; phiI++){
+	for(loop etaI=0;etaI<NTOWER_IN_ETA_PER_SECTOR; etaI++){
+		for(loop phiI=0;phiI<NTOWER_IN_PHI_PER_SECTOR; phiI++){
 			std::cout<<std::setw(5)<< HFRegion[etaI][phiI].energy;
 		}
 		std::cout<<"  <--"<<etaI<<"\n";
@@ -250,20 +249,6 @@ void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[3],
 #endif
 }
 
-void getTopPFClusters(PFcluster Clusters[N_PF_CLUSTERS]) {
-
-#pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
-    for (int i = 0; i < 8; i++) {
-        for (int j = i + 1; j < N_PF_CLUSTERS*3; j++) {
-            if (Clusters[j].ET > Clusters[i].ET) {
-                PFcluster temp = Clusters[i];
-                Clusters[i] = Clusters[j];
-                Clusters[j] = temp;
-            }
-        }
-    }
-}
-
 void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sector, const ap_uint<7> sector) {
 
 #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
@@ -275,9 +260,6 @@ void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sect
     for (int cluster = 0; cluster < 8; cluster++) {
         #pragma HLS UNROLL
         if (Clusters[cluster].ET > 0) {
-//            Clusters[cluster].Eta += -EXTRA_IN_ETA;
-//            Clusters[cluster].Phi = (TOWERS_IN_PHI / N_SECTORS) * sector + (Clusters[cluster].Phi - EXTRA_IN_PHI);
-
             link_out_sector.range(end, start) = Clusters[cluster].data();
         } else {
             link_out_sector.range(end, start) = 0 ;//zero.data();
@@ -287,7 +269,7 @@ void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sect
     }
 }
 
-void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[6]){
+void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS]){
 
 #pragma HLS PIPELINE II=9
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
@@ -314,43 +296,19 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 															{link_in[16], link_in[17], link_in[0]},
 	};
 
-//	PFcluster Clusters[6][N_PF_CLUSTERS*LINKS_PER_REGION];
-//	#pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
-//
-//	for(loop region=0; region<N_SECTORS; region++){
-//#pragma HLS UNROLL factor=2
-//		clustrizer(regionLinks[region], &Clusters[(region-2)/3][(region%3)*4]);
-//
-//		if(region%3 == 2){
-//			getTopPFClusters(Clusters[(region-2)/3]);
-//
-//			#ifndef __SYNTHESIS__
-//				std::cout<< "After Sorting : " << endl;
-//				for(loop cluster=0; cluster<N_PF_CLUSTERS*3; cluster++){
-//					std::cout<<"Cluster " << cluster << " E = "<< Clusters[(region-2)/3][cluster].ET
-//							<<", center = ("<< Clusters[(region-2)/3][cluster].Eta <<","<< Clusters[(region-2)/3][cluster].Phi << ")\n";
-//				}
-//				std::cout<<endl;
-//			#endif
-//
-//			packer(Clusters[(region-2)/3], link_out[(region-2)/3], (region-2)/3);
-//		}
-//	}
-
-
-	PFcluster Clusters[6][N_PF_CLUSTERS*LINKS_PER_REGION];
+	PFcluster Clusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
 	#pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
 
 	link_unroll_loop:
-	for(loop link=0; link<6; link++){
+	for(loop link=0; link<N_OUTPUT_LINKS; link++){
 
 		sector_unroll_loop:
-		for(loop sector=0; sector<3; sector++){
+		for(loop sector=0; sector<LINKS_PER_REGION; sector++){
 
 			PFcluster tempClusters[N_PF_CLUSTERS];
 			#pragma HLS ARRAY_PARTITION variable=tempClusters complete dim=0
 
-			clustrizer(regionLinks[(link*3) + sector], tempClusters);
+			clustrizer(regionLinks[(link*LINKS_PER_REGION) + sector], tempClusters);
 
 			for(loop i=0; i<N_PF_CLUSTERS; i++){
 				tempClusters[i].Eta += -EXTRA_IN_ETA;
@@ -359,18 +317,29 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 			}
 		}
 
-		getTopPFClusters(Clusters[link]);
-
 #ifndef __SYNTHESIS__
-	std::cout<< "After Sorting : " << endl;
-	for(loop cluster=0; cluster<N_PF_CLUSTERS*3; cluster++){
+	std::cout<< "Before Sorting : " << endl;
+	for(loop cluster=0; cluster<16; cluster++){
 		std::cout<<"Cluster " << cluster << " E = "<< Clusters[link][cluster].ET
 				<<", center = ("<< Clusters[link][cluster].Eta <<","<< Clusters[link][cluster].Phi << ")\n";
 	}
 	std::cout<<endl;
 #endif
 
-        packer(Clusters[link], link_out[link], link);
+		PFcluster sortedClusters[N_SORT_ELEMENTS];
+#pragma HLS ARRAY_PARTITION variable=sortedClusters complete dim=0
+		bitonicSort16(Clusters[link], sortedClusters);
+
+#ifndef __SYNTHESIS__
+	std::cout<< "After Sorting : " << endl;
+	for(loop cluster=0; cluster<16; cluster++){
+		std::cout<<"Cluster " << cluster << " E = "<< sortedClusters[cluster].ET
+				<<", center = ("<< sortedClusters[cluster].Eta <<","<< sortedClusters[cluster].Phi << ")\n";
+	}
+	std::cout<<endl;
+#endif
+
+        packer(sortedClusters, link_out[link], link);
 	}
 
 }

@@ -14,6 +14,9 @@
 #include "layer1_multiplicities.h"
 #include "firmware/linpuppi_bits.h"
 
+#include "bitonicSort16.h"
+#include "pfCluster.h"
+
 #define TOWERS_IN_ETA 12
 #define TOWERS_IN_PHI 72
 #define EXTRA_IN_PHI 4
@@ -23,8 +26,8 @@
 #define LINK_WIDTH 220
 
 #define N_INPUT_LINKS  18
-#define N_OUTPUT_LINKS  36
-#define N_PF_CLUSTERS 4
+#define N_OUTPUT_LINKS  6
+
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8
@@ -32,62 +35,15 @@
 #define N_PF 48
 #define N_EXTRA (NCALO - NNEUTRALS)
 
+
+#define N_PF_CLUSTERS 4
 #define NTOWER_IN_ETA_PER_SECTOR (TOWERS_IN_ETA + EXTRA_IN_ETA*2)
 #define NTOWER_IN_PHI_PER_SECTOR ((TOWERS_IN_PHI/N_SECTORS) + EXTRA_IN_PHI*2)
 #define LINKS_PER_REGION ((N_INPUT_LINKS/N_SECTORS) + 2)
+#define N_SORT_ELEMENTS N
 
 using namespace std;
 typedef ap_uint<10> loop;
-
-class PFcluster {
-public:
-    ap_uint<12> ET;
-    ap_uint<5> Eta;
-    ap_uint<8> Phi;
-    ap_uint<39> Spare;
-    ap_uint<64> all;
-
-    PFcluster() {
-        ET = 0;
-        Eta = 0;
-        Phi = 0;
-        Spare = 0;
-    }
-
-    void getPFcluster(ap_uint<64> i) {
-        this->ET = i.range(11,0);
-        this->Eta = i.range(16,12);
-        this->Phi = i.range(24,17);
-        this->Spare = i.range(63,25);
-    }
-
-    void getdata() {
-        all = ET | ((ap_uint<64>)Eta << 12) | ((ap_uint<64>)Phi << 17) | ((ap_uint<64>)Spare << 25) ;
-    }
-
-    ap_uint<64> data() {
-        ap_uint<64> out = ET | ((ap_uint<64>)Eta << 12) | ((ap_uint<64>)Phi << 17) | ((ap_uint<64>)Spare << 25) ;
-        return out ;
-    }
-
-    PFcluster(const PFcluster& rhs) {
-        ET = rhs.ET ;
-        Eta = rhs.Eta ;
-        Phi = rhs.Phi ;
-        Spare = rhs.Spare ;
-        all = rhs.all ;
-    }
-
-    PFcluster& operator=(const PFcluster& rhs) {
-        this->ET = rhs.ET ;
-        this->Eta = rhs.Eta ;
-        this->Phi = rhs.Phi ;
-        this->Spare = rhs.Spare ;
-        this->all = rhs.all ;
-        return *this ;
-    }
-
-};
 
 class hftower{
     public:
@@ -134,5 +90,31 @@ class hftower{
 
 
 void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[6]);
+
+void processInputLink( ap_uint<LINK_WIDTH> link_in,
+						hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS]);
+
+void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
+						hftower HFRegions[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR]);
+
+void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC);
+
+void findMaxEnergyTowerInPhi(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
+								const ap_uint<5> etaCenters[6],
+								ap_uint<8>& phiC);
+void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
+				ap_uint<5>& etaC,
+				ap_uint<8>& phiC);
+
+void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
+		ap_uint<5> etaC,
+		ap_uint<8> phiC,
+		ap_uint<12>& etaSum);
+
+void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
+		PFcluster Clusters[N_PF_CLUSTERS]);
+
+void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sector, const ap_uint<7> sector);
+
 
 #endif
