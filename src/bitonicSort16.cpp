@@ -12,8 +12,6 @@ GreaterSmaller AscendDescend(const din_t &x, const din_t &y){
 
 void FourinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3,
 					din_t &y0, din_t &y1, din_t &y2, din_t &y3){
-   #pragma HLS PIPELINE II=9
-   #pragma HLS INLINE
     GreaterSmaller res;
         res = AscendDescend(x0, x2);
         y0 = res.smaller; y2 = res.greater;
@@ -24,8 +22,6 @@ void FourinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din
 
 void FourinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3,
 					din_t &y0, din_t &y1, din_t &y2, din_t &y3){
-   #pragma HLS PIPELINE II=9
-   #pragma HLS INLINE
     GreaterSmaller res;
         res = AscendDescend(x0, x2);
         y0 = res.greater; y2 = res.smaller;
@@ -36,8 +32,7 @@ void FourinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din
 
 void EightinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3, const din_t &x4, const din_t &x5,
                 const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7){
-        #pragma HLS PIPELINE II=9
-        #pragma HLS INLINE
+
         GreaterSmaller res;
         res = AscendDescend(x0, x4);
         y0 = res.smaller; y4 = res.greater;
@@ -55,8 +50,7 @@ void EightinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const di
 
 void EightinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3, const din_t &x4, const din_t &x5,
                 const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7){
-        #pragma HLS PIPELINE II=9
-       	#pragma HLS INLINE
+
         GreaterSmaller res;
         res = AscendDescend(x0, x4);
         y0 = res.greater; y4 = res.smaller;
@@ -73,7 +67,7 @@ void EightinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const di
 }
 
 void bitonicSort16(din_t in[N], din_t out[N]){
-#pragma HLS PIPELINE II=9
+#pragma HLS PIPELINE
 #pragma HLS ARRAY_PARTITION variable=in
 #pragma HLS ARRAY_PARTITION variable=out
 
