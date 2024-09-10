@@ -45,6 +45,21 @@
 using namespace std;
 typedef ap_uint<10> loop;
 
+class jets{
+	public:
+    ap_uint<12> ET;
+    ap_uint<3> Eta;
+    ap_uint<7> Phi;
+    ap_uint<12> seedET;
+
+    jets(){
+    	ET = 0;
+    	Eta = 0;
+    	Phi = 0;
+    	seedET = 0;
+    }
+};
+
 class hftower{
     public:
     ap_uint<8> energy;
