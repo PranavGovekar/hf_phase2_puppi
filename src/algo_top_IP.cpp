@@ -87,32 +87,32 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
 #endif
 }
 
-template <size_t SIZE, typename returnType>
-void findMaxEnergyTowerInArray(const hftower Towers[SIZE], returnType& etaC){
-#pragma HLS PIPELINE
-
-    // Calculate the next power of two
-    int N_POWER_2 = SIZE;
-    N_POWER_2 -= 1;
-    N_POWER_2 |= N_POWER_2 >> 1;
-    N_POWER_2 |= N_POWER_2 >> 2;
-    N_POWER_2 |= N_POWER_2 >> 4;
-    N_POWER_2 += 1;
+template <int SIZE, int N_POWER_2>
+void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center){
+#pragma HLS INLINE
+//
+//    // Calculate the next power of two
+//    int N_POWER_2 = SIZE;
+//    N_POWER_2 -= 1;
+//    N_POWER_2 |= N_POWER_2 >> 1;
+//    N_POWER_2 |= N_POWER_2 >> 2;
+//    N_POWER_2 |= N_POWER_2 >> 4;
+//    N_POWER_2 += 1;
 
 	hftower tempArray[N_POWER_2];
-	ap_uint<5> index[N_POWER_2];
+	ap_int<10> index[N_POWER_2];
 
 #pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
 #pragma HLS ARRAY_PARTITION variable=index complete dim=0
 
-	for(loop i=0; i<SIZE; i++){
+	for(ap_uint<10> i=0; i<SIZE; i++){
 		tempArray[i] = Towers[i];
 		index[i] = i;
 	}
 
 
-	for(loop i=N_POWER_2; i>1; i=(i/2)){
-		for(loop j=0; j < i/2; j++){
+	for(ap_uint<10> i=N_POWER_2; i>1; i=(i/2)){
+		for(ap_uint<10> j=0; j < i/2; j++){
 			if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy){
 				index[j] = index[(j*2)+1];
 			}
@@ -120,33 +120,37 @@ void findMaxEnergyTowerInArray(const hftower Towers[SIZE], returnType& etaC){
 				index[j] = index[j*2];
 			}
 		}
+//		std::cout << ">>>>index_0 : " << index[0] <<endl;
 	}
 
-	etaC = index[0];
+	center = index[0];
 }
 
 void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
-				ap_uint<5>& etaC,
-				ap_uint<8>& phiC){
+				ap_uint<10>& etaC,
+				ap_uint<10>& phiC){
 
 #pragma HLS PIPELINE
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
 	hftower towersPhi[NTOWER_IN_ETA_PER_SECTOR-2];
-	ap_uint<8> PhiCenters [NTOWER_IN_ETA_PER_SECTOR-2];
-	ap_uint<5> EtaCenter;
+	ap_uint<10> PhiCenters [NTOWER_IN_ETA_PER_SECTOR-2];
+	ap_uint<10> EtaCenter;
 
-	for(ap_uint<5> eta = 1; eta < NTOWER_IN_ETA_PER_SECTOR; eta++) {
-		findMaxEnergyTowerInArray<6, ap_uint<8>>(&HFRegion[eta][3], PhiCenters[eta-1]);
+#pragma HLS ARRAY_PARTITION variable=towersPhi complete dim=0
+#pragma HLS ARRAY_PARTITION variable=PhiCenters complete dim=0
+
+	for(ap_uint<10> eta = 1; eta < NTOWER_IN_ETA_PER_SECTOR-1; eta++) {
+		findMaxEnergyTowerInArray<6,8>(&HFRegion[eta][3], PhiCenters[eta-1]);
 		PhiCenters[eta-1] += 3;
 
 		towersPhi[eta-1] = HFRegion[eta][PhiCenters[eta-1]];
 	}
 
-	findMaxEnergyTowerInArray<12, ap_uint<5>>(towersPhi, EtaCenter);
+	findMaxEnergyTowerInArray<12,16>(towersPhi, EtaCenter);
 
-	etaC = EtaCenter+1;
 	phiC = PhiCenters[EtaCenter];
+	etaC = EtaCenter+1;
 }
 
 // Function to form the cluster and zero out the tower energies
@@ -205,9 +209,8 @@ void clustrizer (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
 #endif
 
     for(loop cluster = 0; cluster < N_PF_CLUSTERS; cluster++) {
-        ap_uint<8> etmax = 0;
-        ap_uint<8> phiC = 1;
-        ap_uint<5> etaC = 1;
+        ap_uint<10> phiC = 1;
+        ap_uint<10> etaC = 1;
         ap_uint<12> etaSum = 0;
 
         findMaxEnergyTower(HFRegion, etaC, phiC);
