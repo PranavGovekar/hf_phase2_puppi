@@ -100,16 +100,18 @@ void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center){
 //    N_POWER_2 += 1;
 
 	hftower tempArray[N_POWER_2];
-	ap_int<10> index[N_POWER_2];
+	ap_uint<10> index[N_POWER_2];
 
 #pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
 #pragma HLS ARRAY_PARTITION variable=index complete dim=0
 
 	for(ap_uint<10> i=0; i<SIZE; i++){
 		tempArray[i] = Towers[i];
-		index[i] = i;
 	}
 
+	for(ap_uint<10> i=0; i<N_POWER_2; i++){
+		index[i] = i;
+	}
 
 	for(ap_uint<10> i=N_POWER_2; i>1; i=(i/2)){
 		for(ap_uint<10> j=0; j < i/2; j++){
@@ -120,43 +122,48 @@ void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center){
 				index[j] = index[j*2];
 			}
 		}
-//		std::cout << ">>>>index_0 : " << index[0] <<endl;
 	}
 
 	center = index[0];
 }
 
+
 void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
 				ap_uint<10>& etaC,
 				ap_uint<10>& phiC){
-
 #pragma HLS PIPELINE
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
-	hftower towersPhi[NTOWER_IN_ETA_PER_SECTOR-2];
-	ap_uint<10> PhiCenters [NTOWER_IN_ETA_PER_SECTOR-2];
-	ap_uint<10> EtaCenter;
-
-#pragma HLS ARRAY_PARTITION variable=towersPhi complete dim=0
+	ap_uint<10> PhiCenters[6];
 #pragma HLS ARRAY_PARTITION variable=PhiCenters complete dim=0
-
-	for(ap_uint<10> eta = 1; eta < NTOWER_IN_ETA_PER_SECTOR-1; eta++) {
-		findMaxEnergyTowerInArray<6,8>(&HFRegion[eta][3], PhiCenters[eta-1]);
-		PhiCenters[eta-1] += 3;
-
-		towersPhi[eta-1] = HFRegion[eta][PhiCenters[eta-1]];
+	ap_uint<10> EtaCenter;
+	for(loop phi = 3; phi < 9; phi++) {
+		hftower towersEta[12];
+#pragma HLS ARRAY_PARTITION variable=towersEta complete dim=0
+		for(loop eta = 0; eta < 12; eta++) {
+			towersEta[eta] = HFRegion[eta][phi];
+		}
+		findMaxEnergyTowerInArray<12,16>(towersEta, PhiCenters[phi-3]);
 	}
 
-	findMaxEnergyTowerInArray<12,16>(towersPhi, EtaCenter);
+	hftower towersPhi[6];
+#pragma HLS ARRAY_PARTITION variable=towersPhi complete dim=0
+	for(loop phi = 0; phi < 6; phi++){
+		towersPhi[phi] = HFRegion[(PhiCenters[phi])][phi+3];
+	}
 
-	phiC = PhiCenters[EtaCenter];
-	etaC = EtaCenter+1;
+	findMaxEnergyTowerInArray<6,8>(towersPhi, EtaCenter);
+
+	phiC = EtaCenter + 3;
+	etaC = PhiCenters[EtaCenter] ;
 }
+
+
 
 // Function to form the cluster and zero out the tower energies
 void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
-		ap_uint<5> etaC,
-		ap_uint<8> phiC,
+		ap_uint<10> etaC,
+		ap_uint<10> phiC,
 		ap_uint<12>& etaSum){
 
 #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
