@@ -109,36 +109,36 @@ void makeSuperTower(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
 // this function takes in 3 links and makes a region of 3 wedges (1 + 2 extra) i.e eta:(12+2) and phi:(4+8)
 // this does not affect the seed searching because only the required area is searched. search region is eta:(12) and phi:(4+2)
-//void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
-//	hftower HFRegions[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR]){
-//
-//#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
-//#pragma HLS ARRAY_PARTITION variable=HFRegions complete dim=0
-//
-//	for(loop link=0; link<LINKS_PER_REGION; link++){
-//
-//		hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
-//
-//		#pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
-//		processInputLink(link_in[link], HFTowers);
-//
-//		for(loop eta=0; eta<TOWERS_IN_ETA; eta++){
-//			for(loop phi=0;phi<TOWERS_IN_PHI/N_INPUT_LINKS; phi++) {
-//				HFRegions[eta+1][(link*(TOWERS_IN_PHI/N_INPUT_LINKS))+phi] = HFTowers[eta][phi];
-//			}
-//		}
-//	}
-//
-//#ifndef __SYNTHESIS__
-//	for(loop eta=0; eta<NTOWER_IN_ETA_PER_SECTOR; eta++){
-//		for(loop phi=0;phi<NTOWER_IN_PHI_PER_SECTOR; phi++) {
-//			std::cout<< "\t" << HFRegions[eta][phi].energy;
-//		}
-//		std::cout << endl;
-//	}
-//	std::cout << endl;
-//#endif
-//}
+void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
+	hftower HFRegions[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR]){
+
+#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+#pragma HLS ARRAY_PARTITION variable=HFRegions complete dim=0
+
+	for(loop link=0; link<LINKS_PER_REGION; link++){
+
+		hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
+
+		#pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
+		processInputLink(link_in[link], HFTowers);
+
+		for(loop eta=0; eta<TOWERS_IN_ETA; eta++){
+			for(loop phi=0;phi<TOWERS_IN_PHI/N_INPUT_LINKS; phi++) {
+				HFRegions[eta+1][(link*(TOWERS_IN_PHI/N_INPUT_LINKS))+phi] = HFTowers[eta][phi];
+			}
+		}
+	}
+
+#ifndef __SYNTHESIS__
+	for(loop eta=0; eta<NTOWER_IN_ETA_PER_SECTOR; eta++){
+		for(loop phi=0;phi<NTOWER_IN_PHI_PER_SECTOR; phi++) {
+			std::cout<< "\t" << HFRegions[eta][phi].energy;
+		}
+		std::cout << endl;
+	}
+	std::cout << endl;
+#endif
+}
 //
 //void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
 //				ap_uint<5>& etaC,
@@ -314,35 +314,77 @@ void formJetsAndZeroOut(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/
     superTowers[etaC-1][phiC-1].energy = 0;
 }
 
-void superClusterizer(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
+void isTau(jets Jet[9], jets Taus[9]){
+
+	ap_uint<4> count = 0;
+	for(loop idx = 0; idx < 9; idx++) {
+		if(((float)Jet[idx].seedET)/((float)Jet[idx].ET) >= 0.7f){
+			Taus[count] = Jet[idx];
+			count++;
+		}
+	}
+
+#ifndef __SYNTHESIS__
+	std::cout<< "Taus : " << endl;
+	for(loop cluster=0; cluster<9; cluster++){
+		std::cout<<"Tau " << cluster << " E = "<< Taus[cluster].ET << "Seed = " << Taus[cluster].seedET
+				<<", center = ("<< Taus[cluster].Eta <<","<< Taus[cluster].Phi << ")\n";
+	}
+	std::cout<<endl;
+#endif
+
+}
+
+//void Exy (hftower superTowers, ap_uint<10>){
+//
+//
+//
+//}
+
+void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],
 		jets Jet[9]){
 
-#pragma HLS PIPELINE
-	hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2];
-
-	makeSuperTower(link_in, superTowers);
-
 	for(loop idx = 0; idx < 9; idx++) {
-		std::cout << "itration : " << idx << endl;
-        std::cout << "here\n";
         ap_uint<10> phiC = 1;
-        std::cout << "here\n";
         ap_uint<10> etaC = 1;
-        std::cout << "here\n";
         ap_uint<12> etaSum = 0;
-        std::cout << "here\n";
 
-        std::cout << "before finding max energy...........\n";
 		findMaxEnergySuperTower(superTowers, etaC, phiC);
-		std::cout << "after finding max energy...........\n";
 		Jet[idx].seedET = superTowers[etaC][phiC].energy;
 		formJetsAndZeroOut(superTowers, etaC, phiC, etaSum);
-		std::cout << "after forming clusters...........\n";
 		Jet[idx].ET = etaSum;
 		Jet[idx].Eta = etaC;
 		Jet[idx].Phi = phiC;
 
 	}
+
+#ifndef __SYNTHESIS__
+	std::cout<< "Jets : " << endl;
+	for(loop cluster=0; cluster<9; cluster++){
+		std::cout<<"Jet " << cluster << " E = "<< Jet[cluster].ET << "Seed = " << Jet[cluster].seedET
+				<<", center = ("<< Jet[cluster].Eta <<","<< Jet[cluster].Phi << ")\n";
+	}
+	std::cout<<endl;
+#endif
+}
+
+void superClusterizer(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
+		jets Jet[9]){
+
+#pragma HLS PIPELINE
+
+	hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2];
+	jets tempJet[9];
+	jets Taus[9];
+
+	makeSuperTower(link_in, superTowers);
+
+	makeJets(superTowers, tempJet);
+	for(loop idx = 0; idx < 9; idx++) {
+		Jet[idx] = tempJet[idx];
+	}
+
+	isTau(Jet, Taus);
 }
 //
 //// Function to form the cluster and zero out the tower energies
@@ -462,14 +504,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 
 	superClusterizer(link_in, Jet);
 
-	#ifndef __SYNTHESIS__
-		std::cout<< "Jets : " << endl;
-		for(loop cluster=0; cluster<9; cluster++){
-			std::cout<<"Jet " << cluster << " E = "<< Jet[cluster].ET << "Seed = " << Jet[cluster].seedET
-					<<", center = ("<< Jet[cluster].Eta <<","<< Jet[cluster].Phi << ")\n";
-		}
-		std::cout<<endl;
-	#endif
+
 
 
 
