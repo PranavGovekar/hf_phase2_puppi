@@ -45,62 +45,66 @@
 using namespace std;
 typedef ap_uint<10> loop;
 
-class jets{
-	public:
+class jets {
+public:
     ap_uint<12> ET;
     ap_uint<3> Eta;
     ap_uint<7> Phi;
     ap_uint<12> seedET;
 
-    jets(){
-    	ET = 0;
-    	Eta = 0;
-    	Phi = 0;
-    	seedET = 0;
+    jets() {
+        ET = 0;
+        Eta = 0;
+        Phi = 0;
+        seedET = 0;
     }
 };
 
-class hftower{
-    public:
+class hftower {
+public:
     ap_uint<8> energy;
     ap_uint<2> fb;
 
-    hftower(){
+    hftower() {
         energy = 0;
         fb = 0;
     }
 
-    ap_uint<10> gettower(void){
-    	ap_uint<10> data;
+    ap_uint<10> gettower(void) {
+        ap_uint<10> data;
         data  =
-	((ap_uint<10>)energy & 0xFF) |
-	((ap_uint<10>)fb<<8 & 0x300) ;
-	return data ;
+            ((ap_uint<10>)energy & 0xFF) |
+            ((ap_uint<10>)fb<<8 & 0x300) ;
+        return data ;
     }
 
-    void fillhftower(ap_uint<10> i){
-    	this->energy = i.range(7, 0);
-    	this->fb = i.range(9, 8);
+    void fillhftower(ap_uint<10> i) {
+        this->energy = i.range(7, 0);
+        this->fb = i.range(9, 8);
     }
 
-    hftower(ap_uint<10> i){
-    	this->energy = i.range(7, 0);
-    	this->fb = i.range(9, 8);
+    hftower(ap_uint<10> i) {
+        this->energy = i.range(7, 0);
+        this->fb = i.range(9, 8);
     }
 
-    hftower(const hftower& rhs){
-    energy=rhs.energy;
-    fb=rhs.fb;
+    hftower(const hftower& rhs) {
+        energy=rhs.energy;
+        fb=rhs.fb;
     }
 
-    hftower& operator=(const hftower& rhs){
-    this->energy=rhs.energy;
-    this->fb=rhs.fb;
-    return *this;
+    hftower& operator=(const hftower& rhs) {
+        this->energy=rhs.energy;
+        this->fb=rhs.fb;
+        return *this;
     }
 
-    ap_uint<8> Energy(void) {return energy;}
-    ap_uint<2> Fb(void) {return fb;}
+    ap_uint<8> Energy(void) {
+        return energy;
+    }
+    ap_uint<2> Fb(void) {
+        return fb;
+    }
 };
 
 

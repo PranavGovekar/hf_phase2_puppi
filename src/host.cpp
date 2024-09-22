@@ -23,9 +23,9 @@ typedef unsigned long long int ulli;
 int main(int argc, char** argv) {
 
     std::cout << "argc = " << argc << std::endl;
-	for(int i=0; i < argc; i++){
-	    std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
-	}
+    for(int i=0; i < argc; i++) {
+        std::cout << "argv[" << i << "] = " << argv[i] << std::endl;
+    }
 
     // Read settings
     std::string binaryFile = "./puppi.xclbin";
@@ -59,9 +59,9 @@ int main(int argc, char** argv) {
     }
 
     for (int i = 0; i < DATA_SIZE; ++i) {
-       std::cout << bo0_map[i] << std::endl;
-    }    
-    std::cout << "\noutput: \n" ;   
+        std::cout << bo0_map[i] << std::endl;
+    }
+    std::cout << "\noutput: \n" ;
     // Synchronize buffer content with device side
     std::cout << "synchronize input buffer data to device global memory\n";
     boIn1.sync(XCL_BO_SYNC_BO_TO_DEVICE);
@@ -76,9 +76,9 @@ int main(int argc, char** argv) {
 
     // Validate results
     for (int i = 0; i < DATA_SIZE; ++i) {
-       std::cout << bo1_map[i] << std::endl; 
-       std::cout << std::bitset<64>(bo1_map[i]) << std::endl;
-    }    
+        std::cout << bo1_map[i] << std::endl;
+        std::cout << std::bitset<64>(bo1_map[i]) << std::endl;
+    }
 
     return 0;
 }
