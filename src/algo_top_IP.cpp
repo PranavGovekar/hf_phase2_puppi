@@ -326,22 +326,33 @@ void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center)
         tempArray[i] = Towers[i];
         index[i] = i;
     }
+    for(ap_uint<10> i=SIZE; i<N_POWER_2; i++)
+    {
+        index[i] = SIZE;
+    }
 
 
     for(ap_uint<10> i=N_POWER_2; i>1; i=(i/2))
     {
+            //std::cout<<" -- > for i = "<<i<<"\n";
+            //for(ap_uint<10> j=0; j < i; j++)
+	    //    std::cout<<setw(3)<<tempArray[index[j]].energy<<" , ";
+            //std::cout<<std::endl;
+            //for(ap_uint<10> j=0; j < i; j++)
+	    //    std::cout<<setw(3)<<index[j]<<" , ";
+            //std::cout<<std::endl;
         for(ap_uint<10> j=0; j < i/2; j++)
         {
-            if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy)
+            //if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy)
+            if(tempArray[index[j]].energy < tempArray[index[j + i/2]].energy)
             {
-                index[j] = index[(j*2)+1];
+                index[j] = index[j+i/2];
             }
             else
             {
-                index[j] = index[j*2];
+                index[j] = index[j];
             }
         }
-//		std::cout << ">>>>index_0 : " << index[0] <<endl;
     }
 
     center = index[0];
@@ -365,12 +376,20 @@ void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][(TOWERS
 
     for(ap_uint<5> eta = 1; eta < 5; eta++)
     {
+        //std::cout<<"   ETA SCAN !! "<<eta<<" \n";
         findMaxEnergyTowerInArray<24,32>(&HFRegion[eta][1], PhiCenters[eta-1]);
         PhiCenters[eta-1] += 1;
-
         towersPhi[eta-1] = HFRegion[eta][PhiCenters[eta-1]];
+        //std::cout<<" eta = "<<eta<<" | ";
+        //for(int i =0 ; i < (TOWERS_IN_PHI/3)+2  ;  i++)
+        //{
+        //    std::cout<<HFRegion[eta][i].energy<<",";
+        //}
+        //std::cout<<"   | [ "<<towersPhi[PhiCenters[eta-1]].energy<<" / "<< PhiCenters[eta-1] <<" ] \n";
     }
+    
     findMaxEnergyTowerInArray<4,4>(towersPhi, EtaCenter);
+    //std::cout<<"   Phi SCAN !! "<< EtaCenter <<"\n";
 
     phiC = PhiCenters[EtaCenter];
     etaC = EtaCenter+1;
@@ -425,7 +444,7 @@ void selectTaus(const jets Jet[9], jets Taus[9])
         std::cout<< "Taus : " << endl;
         for(loop cluster=0; cluster<9; cluster++)
         {
-            std::cout<<"Tau " << cluster << " E = "<< Taus[cluster].ET << "Seed = " << Taus[cluster].seedET
+            std::cout<<"Tau " << cluster << " E = "<< Taus[cluster].ET << " Seed = " << Taus[cluster].seedET
                      <<", center = ("<< Taus[cluster].Eta <<","<< Taus[cluster].Phi << ")\n";
         }
         std::cout<<endl;
@@ -444,8 +463,10 @@ void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],jets
         ap_uint<12> etSum = 0;
 
         findMaxEnergySuperTower(superTowers, etaC, phiC);
+        
         Jet[idx].seedET = superTowers[etaC][phiC].energy;
         formJetsAndZeroOut(superTowers, etaC, phiC, etSum);
+        
         if(etSum ==0 )
         {
             etaC=0 ;
@@ -463,7 +484,7 @@ void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],jets
         std::cout<< "Jets : " << endl;
         for(loop cluster=0; cluster<9; cluster++)
         {
-            std::cout<<"Jet " << cluster << " E = "<< Jet[cluster].ET << "Seed = " << Jet[cluster].seedET
+            std::cout<<"Jet " << cluster << " E = "<< Jet[cluster].ET << " Seed = " << Jet[cluster].seedET
                      <<", center = ("<< Jet[cluster].Eta <<","<< Jet[cluster].Phi << ")\n";
         }
         std::cout<<endl;
@@ -734,17 +755,17 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 
     if(DEBUG_LEVEL > 0)
     {
-        std::cout<<"@@HFTowers | phi | tower_et_phi...\n";
-        std::cout<<"@@HFSuperTowers | eta | tower_et_phi...\n";
-        std::cout<<"@@Jets | nJet | jet.data()...\n";
-        std::cout<<"@@Taus | nJet | jet.data()...\n";
-        std::cout<<"@@CALOCLUSTER | link | pf_cluster.data() ...\n";
+        std::cout<<"# @@HFTowers | phi | tower_et_phi...\n";
+        std::cout<<"# @@HFSuperTowers | eta | tower_et_phi...\n";
+        std::cout<<"# @@Jets | nJet | jet.data()...\n";
+        std::cout<<"# @@Taus | nJet | jet.data()...\n";
+        std::cout<<"# @@CALOCLUSTER | link | pf_cluster.data() ...\n";
     }
 
     if(DEBUG_LEVEL > 0)
     {
         hftower towerGrid[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
-        for(int link = 0 ; link < N_OUTPUT_LINKS ; link++)
+        for(int link = 0 ; link < N_INPUT_LINKS ; link++)
         {
             processInputLink(link_in[link], towerGrid);
             for(loop phi=0; phi<TOWERS_IN_PHI/N_INPUT_LINKS; phi++)
