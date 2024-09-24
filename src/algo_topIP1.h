@@ -21,7 +21,7 @@
 #define TOWERS_IN_PHI 72
 #define EXTRA_IN_PHI 4
 #define EXTRA_IN_ETA 1
-#define MIN_CLUSTER_SEED_ENERGY 5
+#define MIN_CLUSTER_SEED_ENERGY 1
 
 #define LINK_WIDTH 220
 
@@ -45,32 +45,43 @@
 using namespace std;
 typedef ap_uint<10> loop;
 
-class jets {
+class jets
+{
 public:
     ap_uint<12> ET;
     ap_uint<3> Eta;
     ap_uint<7> Phi;
     ap_uint<12> seedET;
 
-    jets() {
+    jets()
+    {
         ET = 0;
         Eta = 0;
         Phi = 0;
         seedET = 0;
     }
+    ap_uint<64> data()
+    {
+        ap_uint<64> out = ET | ((ap_uint<64>)Eta << 12) | ((ap_uint<64>)Phi << 15) | ((ap_uint<64>)seedET << 27) ;
+        return out ;
+    }
+
 };
 
-class hftower {
+class hftower
+{
 public:
     ap_uint<8> energy;
     ap_uint<2> fb;
 
-    hftower() {
+    hftower()
+    {
         energy = 0;
         fb = 0;
     }
 
-    ap_uint<10> gettower(void) {
+    ap_uint<10> gettower(void)
+    {
         ap_uint<10> data;
         data  =
             ((ap_uint<10>)energy & 0xFF) |
@@ -78,31 +89,37 @@ public:
         return data ;
     }
 
-    void fillhftower(ap_uint<10> i) {
+    void fillhftower(ap_uint<10> i)
+    {
         this->energy = i.range(7, 0);
         this->fb = i.range(9, 8);
     }
 
-    hftower(ap_uint<10> i) {
+    hftower(ap_uint<10> i)
+    {
         this->energy = i.range(7, 0);
         this->fb = i.range(9, 8);
     }
 
-    hftower(const hftower& rhs) {
+    hftower(const hftower& rhs)
+    {
         energy=rhs.energy;
         fb=rhs.fb;
     }
 
-    hftower& operator=(const hftower& rhs) {
+    hftower& operator=(const hftower& rhs)
+    {
         this->energy=rhs.energy;
         this->fb=rhs.fb;
         return *this;
     }
 
-    ap_uint<8> Energy(void) {
+    ap_uint<8> Energy(void)
+    {
         return energy;
     }
-    ap_uint<2> Fb(void) {
+    ap_uint<2> Fb(void)
+    {
         return fb;
     }
 };

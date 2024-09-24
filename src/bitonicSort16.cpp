@@ -1,7 +1,8 @@
 #include "bitonicSort16.h"
 
 //Main CAE block (compare and exchange)
-GreaterSmaller AscendDescend(const din_t &x, const din_t &y) {
+GreaterSmaller AscendDescend(const din_t &x, const din_t &y)
+{
     GreaterSmaller s;
 
     s.greater = (x.ET > y.ET) ? y : x;
@@ -11,7 +12,8 @@ GreaterSmaller AscendDescend(const din_t &x, const din_t &y) {
 }
 
 void FourinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3,
-                    din_t &y0, din_t &y1, din_t &y2, din_t &y3) {
+                    din_t &y0, din_t &y1, din_t &y2, din_t &y3)
+{
     #pragma HLS PIPELINE II=9
     #pragma HLS INLINE
     GreaterSmaller res;
@@ -25,7 +27,8 @@ void FourinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din
 }
 
 void FourinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3,
-                    din_t &y0, din_t &y1, din_t &y2, din_t &y3) {
+                    din_t &y0, din_t &y1, din_t &y2, din_t &y3)
+{
     #pragma HLS PIPELINE II=9
     #pragma HLS INLINE
     GreaterSmaller res;
@@ -39,7 +42,8 @@ void FourinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din
 }
 
 void EightinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3, const din_t &x4, const din_t &x5,
-                     const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7) {
+                     const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7)
+{
     #pragma HLS PIPELINE II=9
     #pragma HLS INLINE
     GreaterSmaller res;
@@ -62,7 +66,8 @@ void EightinSmallFir(const din_t &x0, const din_t &x1, const din_t &x2, const di
 }
 
 void EightinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const din_t &x3, const din_t &x4, const din_t &x5,
-                     const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7) {
+                     const din_t &x6, const din_t &x7, din_t &y0, din_t &y1, din_t &y2, din_t &y3, din_t &y4, din_t &y5, din_t &y6, din_t &y7)
+{
     #pragma HLS PIPELINE II=9
     #pragma HLS INLINE
     GreaterSmaller res;
@@ -84,7 +89,8 @@ void EightinGreatFir(const din_t &x0, const din_t &x1, const din_t &x2, const di
 
 }
 
-void bitonicSort16(din_t in[N], din_t out[N]) {
+void bitonicSort16(din_t in[N], din_t out[N])
+{
     #pragma HLS PIPELINE II=9
     #pragma HLS ARRAY_PARTITION variable=in
     #pragma HLS ARRAY_PARTITION variable=out
@@ -104,14 +110,16 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //Starting of first stage
 
-    for(dloop_t i=0; i<N/4; i++) {
+    for(dloop_t i=0; i<N/4; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(in[4*i], in[4*i+1]);
         a[4*i] = result.smaller;
         a[4*i+1] = result.greater;
     }
 
-    for(dloop_t i=0; i<N/4; i++) {
+    for(dloop_t i=0; i<N/4; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(in[4*i+2], in[4*i+3]);
         a[4*i+2] = result.greater;
@@ -120,7 +128,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //Starting of second stage
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         FourinSmallFir(a[8*i], a[8*i+1], a[8*i+2], a[8*i+3], b[8*i], b[8*i+1], b[8*i+2], b[8*i+3]);
         FourinGreatFir(a[8*i+4], a[8*i+5], a[8*i+6], a[8*i+7], b[8*i+4], b[8*i+5], b[8*i+6], b[8*i+7]);
@@ -128,7 +137,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //Starting of third stage
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(b[8*i], b[8*i+1]);
         c[8*i] = result.smaller;
@@ -139,7 +149,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
         c[8*i+3] = result.greater;
     }
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(b[8*i+4], b[8*i+5]);
         c[8*i+4] = result.greater;
@@ -157,12 +168,14 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //Starting fifth stage
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         FourinSmallFir(d[4*i], d[4*i+1], d[4*i+2], d[4*i+3], e[4*i], e[4*i+1], e[4*i+2], e[4*i+3]);
     }
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         FourinGreatFir(d[4*i+8], d[4*i+9], d[4*i+10], d[4*i+11], e[4*i+8], e[4*i+9], e[4*i+10], e[4*i+11]);
     }
@@ -177,7 +190,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
         f[2*i+1] = result.greater;
     }
 
-    for(dloop_t i=0; i<N/4; i++) {
+    for(dloop_t i=0; i<N/4; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(e[2*i+8], e[2*i+9]);
         f[2*i+8] = result.greater;
@@ -186,7 +200,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //Starting seventh stage
 
-    for(dloop_t i=0; i<N/2; i++) {
+    for(dloop_t i=0; i<N/2; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(f[i], f[i+8]);
         g[i] = result.smaller;
@@ -195,7 +210,8 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //starting eighth stage
 
-    for(dloop_t i=0; i<N/8; i++) {
+    for(dloop_t i=0; i<N/8; i++)
+    {
         #pragma HLS unroll
         EightinSmallFir(g[8*i], g[8*i+1], g[8*i+2], g[8*i+3], g[8*i+4], g[8*i+5], g[8*i+6], g[8*i+7],
                         h[8*i], h[8*i+1], h[8*i+2], h[8*i+3], h[8*i+4], h[8*i+5], h[8*i+6], h[8*i+7]);
@@ -203,14 +219,16 @@ void bitonicSort16(din_t in[N], din_t out[N]) {
 
 //starting ninth stage
 
-    for(dloop_t i=0; i<N/4; i++) {
+    for(dloop_t i=0; i<N/4; i++)
+    {
         #pragma HLS unroll
         FourinSmallFir(h[4*i], h[4*i+1], h[4*i+2], h[4*i+3], l[4*i], l[4*i+1], l[4*i+2], l[4*i+3]);
     }
 
 //starting tenth stage
 
-    for(dloop_t i=0; i<N/2; i++) {
+    for(dloop_t i=0; i<N/2; i++)
+    {
         #pragma HLS unroll
         result = AscendDescend(l[2*i], l[2*i+1]);
         out[2*i] = result.smaller;

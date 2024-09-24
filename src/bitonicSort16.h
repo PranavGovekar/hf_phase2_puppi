@@ -12,7 +12,8 @@ using namespace std;
 typedef PFcluster din_t;
 typedef ap_uint<6> dloop_t;
 
-class GreaterSmaller {
+class GreaterSmaller
+{
 public:
     din_t greater, smaller;
 };

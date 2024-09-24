@@ -334,13 +334,13 @@ void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center)
 
     for(ap_uint<10> i=N_POWER_2; i>1; i=(i/2))
     {
-            //std::cout<<" -- > for i = "<<i<<"\n";
-            //for(ap_uint<10> j=0; j < i; j++)
-	    //    std::cout<<setw(3)<<tempArray[index[j]].energy<<" , ";
-            //std::cout<<std::endl;
-            //for(ap_uint<10> j=0; j < i; j++)
-	    //    std::cout<<setw(3)<<index[j]<<" , ";
-            //std::cout<<std::endl;
+        //std::cout<<" -- > for i = "<<i<<"\n";
+        //for(ap_uint<10> j=0; j < i; j++)
+        //    std::cout<<setw(3)<<tempArray[index[j]].energy<<" , ";
+        //std::cout<<std::endl;
+        //for(ap_uint<10> j=0; j < i; j++)
+        //    std::cout<<setw(3)<<index[j]<<" , ";
+        //std::cout<<std::endl;
         for(ap_uint<10> j=0; j < i/2; j++)
         {
             //if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy)
@@ -387,7 +387,7 @@ void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][(TOWERS
         //}
         //std::cout<<"   | [ "<<towersPhi[PhiCenters[eta-1]].energy<<" / "<< PhiCenters[eta-1] <<" ] \n";
     }
-    
+
     findMaxEnergyTowerInArray<4,4>(towersPhi, EtaCenter);
     //std::cout<<"   Phi SCAN !! "<< EtaCenter <<"\n";
 
@@ -463,10 +463,10 @@ void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],jets
         ap_uint<12> etSum = 0;
 
         findMaxEnergySuperTower(superTowers, etaC, phiC);
-        
+
         Jet[idx].seedET = superTowers[etaC][phiC].energy;
         formJetsAndZeroOut(superTowers, etaC, phiC, etSum);
-        
+
         if(etSum ==0 )
         {
             etaC=0 ;

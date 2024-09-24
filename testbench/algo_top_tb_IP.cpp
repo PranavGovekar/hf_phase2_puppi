@@ -71,7 +71,7 @@ int main() {
         algo_topIP1(link_in, link_out);
 
         hftower HFTowers;
-	
+	/*
 	std::cout<<"Output Towers ! \n";
         for(loop i = 0; i < N_OUTPUT_LINKS; i++){
         	for(loop j = 0; j < TOWERS_IN_ETA-1; j++){
@@ -81,10 +81,9 @@ int main() {
     			cout << "  > tower  [ "
     			 << " phi slice : " << i<<" | "<< " eta slice : "<<j<<" ] "
 			 <<" energy  :" <<  HFTowers.energy<< endl ;
-        	break;
 		}
-        	break;
           }
+        */
     }
 
     closedir(dir);

@@ -3,14 +3,16 @@
 void stream_in(
     hls::stream<axi_stream> &inputStream,
     ap_uint<576> *link_in
-) {
+)
+{
 
     axi_stream buffer;
     ap_uint<576> tempLink;
     ap_uint<BIT_WIDTH> tempArray[N_WORDS];
     ap_uint<12> start = 0;
 
-    for(loop i=0; i<N_WORDS; i++) {
+    for(loop i=0; i<N_WORDS; i++)
+    {
         buffer = inputStream.read();
         tempLink.range(start+(BIT_WIDTH-1),start) = buffer.data;
 
@@ -24,7 +26,8 @@ void stream_in(
 
         start = start + BIT_WIDTH;
 
-        if(i == N_WORDS-1) {
+        if(i == N_WORDS-1)
+        {
             start = 0;
         }
     }
@@ -39,7 +42,8 @@ void stream_in(
 void stream_out(
     hls::stream<axi_stream> &outputStream,
     ap_uint<576> *link_out
-) {
+)
+{
 
     axi_stream buffer;
     ap_uint<576> tempLink;
@@ -52,7 +56,8 @@ void stream_out(
     std::cout << "tempLink : " << std::bitset<576>(tempLink) << endl;
 #endif
 
-    for(loop i=0; i<N_WORDS; i++) {
+    for(loop i=0; i<N_WORDS; i++)
+    {
 #ifdef __SYNTHESIS__
         std::cout << "start+B , start :" << start+(BIT_WIDTH-1) << "," << start << endl;
         std::cout << "tempLink ranged: " << std::bitset<64>(tempLink.range(start+(BIT_WIDTH-1),start)) << endl;
@@ -66,7 +71,8 @@ void stream_out(
         std::cout << "i insdie the stream_out for loop :" << i << endl;
 #endif
 
-        if (i == N_WORDS-1) {
+        if (i == N_WORDS-1)
+        {
 #ifdef __SYNTHESIS__
             cout << "i insdie the stream_out for loop :" << i << endl;
 #endif
@@ -74,7 +80,8 @@ void stream_out(
             buffer.last = 1;
             start = 0;
         }
-        else {
+        else
+        {
             buffer.last = 0;
         }
 
@@ -96,7 +103,8 @@ void AXIStream_wrapper(
     hls::stream<axi_stream> &outputStream3,
     hls::stream<axi_stream> &outputStream4,
     hls::stream<axi_stream> &outputStream5
-) {
+)
+{
 
     #pragma HLS INTERFACE mode=ap_ctrl_hs port=return
     #pragma HLS DATAFLOW
