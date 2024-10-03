@@ -1,5 +1,7 @@
 #include "bitonicSort16.h"
 
+#define N 16
+
 //Main CAE block (compare and exchange)
 GreaterSmaller AscendDescend(const din_t &x, const din_t &y)
 {

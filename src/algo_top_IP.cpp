@@ -1,7 +1,5 @@
 #include "algo_topIP1.h"
 
-#define DEBUG_LEVEL 10
-
 void compute(
     l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS],
     l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO],
@@ -15,87 +13,6 @@ puppi:
         fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
     }
 }
-
-void makePFClusters( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster ClustersOut[N_OUTPUT_LINKS][N_SORT_ELEMENTS]    )
-{
-    // TODO : FOR LOOP TO DO THIS PLEASE !! :)
-    ap_uint<LINK_WIDTH> linksInSector[N_SECTORS][3] ;
-
-    linksInSector[0][0] = link_in[17];
-    linksInSector[0][1] = link_in[ 0];
-    linksInSector[0][2] = link_in[ 1];
-    for(int i=1; i<N_SECTORS-1; i++)
-    {
-        linksInSector[i][0] = link_in[i-1];
-        linksInSector[i][1] = link_in[i  ];
-        linksInSector[i][2] = link_in[i+1];
-    }
-    linksInSector[N_SECTORS -1][0] = link_in[N_SECTORS -2 ];
-    linksInSector[N_SECTORS -1][1] = link_in[N_SECTORS -1];
-    linksInSector[N_SECTORS -1][2] = link_in[ 0];
-
-    // Too many '#define ed' elements ?
-    PFcluster caloClusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
-    #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
-
-link_unroll_loop:
-    for(loop link=0; link<N_OUTPUT_LINKS; link++)
-    {
-sector_unroll_loop:
-        for(loop sector=0; sector<LINKS_PER_REGION; sector++)
-        {
-            PFcluster tempClusters[N_PF_CLUSTERS];
-            #pragma HLS ARRAY_PARTITION variable=tempClusters complete dim=0
-
-            makeCaloClusters(linksInSector[(link*LINKS_PER_REGION) + sector], tempClusters);
-
-            for(loop i=0; i<N_PF_CLUSTERS; i++)
-            {
-                if(tempClusters[i].ET > 0 )
-                {
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].ET  = tempClusters[i].ET;
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].Eta = tempClusters[i].Eta - EXTRA_IN_ETA;
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].Phi = tempClusters[i].Phi - 4  + ( link*3 + sector )*4  ; // NEED TO ADD LOGIC AS EXPLANATION
-                }
-            }
-        }
-
-#ifndef __SYNTHESIS__
-        if (DEBUG_LEVEL > 5)
-        {
-            std::cout<< "Before Sorting : " << endl;
-            for(loop cluster=0; cluster<16; cluster++)
-            {
-                std::cout<<"Cluster " << cluster << " E = "<< caloClusters[link][cluster].ET
-                         <<", center = ("<< caloClusters[link][cluster].Eta <<","<< caloClusters[link][cluster].Phi << ")\n";
-            }
-            std::cout<<endl;
-        }
-#endif
-
-        PFcluster sortedClusters[N_SORT_ELEMENTS];
-        #pragma HLS ARRAY_PARTITION variable=sortedClusters complete dim=0
-        bitonicSort16(caloClusters[link], sortedClusters);
-
-#ifndef __SYNTHESIS__
-        if (DEBUG_LEVEL > 2)
-        {
-            std::cout<< "Calo clusters in out link :  "<< link << endl;
-            for(loop cluster=0; cluster<16; cluster++)
-            {
-                std::cout<<"  Cluster " << cluster << " E = "<< sortedClusters[cluster].ET
-                         <<", center = ("<< sortedClusters[cluster].Eta <<","<< sortedClusters[cluster].Phi << ")\n";
-            }
-            std::cout<<endl;
-        }
-#endif
-        for(int i =0 ; i< N_SORT_ELEMENTS ; i++)
-        {
-            ClustersOut[link][i]= sortedClusters[i];
-        }
-    }
-}
-
 
 void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS])
 {

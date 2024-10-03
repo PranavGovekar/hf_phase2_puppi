@@ -5,8 +5,6 @@
 #include "ap_int.h"
 #include "pfCluster.h"
 
-#define N 16
-
 using namespace std;
 
 typedef PFcluster din_t;
@@ -18,7 +16,7 @@ public:
     din_t greater, smaller;
 };
 
-void bitonicSort16(din_t in[N], din_t out[N]);
+void bitonicSort16(din_t in[16], din_t out[16]);
 
 #endif
 
