@@ -6,7 +6,6 @@
 #include "pfCluster.h"
 #include "hfTowers.h"
 
-#define DEBUG_LEVEL 10
 
 #define TOWERS_IN_ETA 12
 #define TOWERS_IN_PHI 72
@@ -19,6 +18,7 @@
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  6
 
+#define DEBUG_LEVEL 1
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8

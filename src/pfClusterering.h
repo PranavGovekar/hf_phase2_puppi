@@ -8,7 +8,7 @@
 #include "layer1_multiplicities.h"
 #include "firmware/linpuppi.h"
 #include "firmware/linpuppi_bits.h"
-//#include "pf.h"
+#include "pf.h"
 
 #include "common.h"
 

@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #include "caloObjects.h"
-#include "puppi.h"
+#include "pfClusterering.h"
 
 void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[6]);
 
