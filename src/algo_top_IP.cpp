@@ -1,19 +1,4 @@
-
 #include "algo_topIP1.h"
-
-void compute(
-    l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS],
-    l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO],
-    const l1ct::PFRegion region[N_SECTORS]
-)
-{
-    # pragma HLS INLINE off
-puppi:
-    for(loop i=0; i<N_SECTORS; i++)
-    {
-        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
-    }
-}
 
 void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS])
 {
@@ -59,7 +44,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
-    makeCaloObjects(link_in, Jets,Taus);
+  //  makeCaloObjects(link_in, Jets,Taus);
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 0)
     {

@@ -1,3 +1,4 @@
+#define N_SECTORS_PF 6
 #include "pfClusterering.h"
 
 // this function takes in 3 links and makes a region of 3 wedges (1 + 2 extra) i.e eta:(12+2) and phi:(4+8)
@@ -230,7 +231,7 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
     }
 
 #ifndef __SYNTHESIS__
-    if(DEBUG_LEVEL > 2)
+    if(DEBUG_LEVEL > 7)
     {
         for(loop cluster=0; cluster<N_PF_CLUSTERS; cluster++)
         {
@@ -267,6 +268,23 @@ packer_loop:
     }
 }
 
+void compute(
+    l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS],
+    l1ct::HadCaloObj H_in_regionized[N_SECTORS_PF][NCALO],
+    const l1ct::PFRegion region[N_SECTORS_PF]
+)
+{
+    # pragma HLS INLINE off
+puppi:
+    for(loop i=0; i<N_SECTORS_PF; i++)
+    {
+        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
+    }
+}
+
+
+
+
 void makePFClusters( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster ClustersOut[N_OUTPUT_LINKS][N_SORT_ELEMENTS]    )
 {
     // TODO : FOR LOOP TO DO THIS PLEASE !! :)
@@ -286,31 +304,173 @@ void makePFClusters( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster
     linksInSector[N_SECTORS -1][2] = link_in[ 0];
 
     // Too many '#define ed' elements ?
-    PFcluster caloClusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
+    // PFcluster caloClusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
+    PFcluster caloClusters[N_INPUT_LINKS][N_SORT_ELEMENTS];
     #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
 
-link_unroll_loop:
-    for(loop link=0; link<N_OUTPUT_LINKS; link++)
-    {
+    l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS];
+    l1ct::HadCaloObj pfHadronicClusters[N_SECTORS_PF][NCALO];
+
+    // define the  sector boundaries and overlaps
+    l1ct::PFRegion region[N_SECTORS_PF];
+    regions_init:
+    for(int i=0 ; i < N_SECTORS_PF ; i++)
+        {
+            region[i].hwEtaCenter = l1ct::glbeta_t(6);
+            region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
+
+            region[i].hwEtaExtra = l1ct::eta_t(1);
+            region[i].hwPhiExtra = l1ct::phi_t(2);
+
+            region[i].hwEtaHalfWidth = l1ct::eta_t(7);
+            region[i].hwPhiHalfWidth = l1ct::phi_t(6);
+            
+            #ifndef __SYNTHESIS__
+            if(DEBUG_LEVEL > 9)
+                {
+                    std::cout<<"Sector "<<i<<" | eta center : "<<region[i].hwEtaCenter<<" , phi center : "<<region[i].hwPhiCenter
+                         <<" [ eta HW : "<<region[i].hwEtaHalfWidth<<" phi HW : "<< region[i].hwPhiHalfWidth  <<" ] "   
+                         <<"\n";
+                }
+            #endif
+
+        }
+    
 sector_unroll_loop:
-        for(loop sector=0; sector<LINKS_PER_REGION; sector++)
+    for(loop sector=0; sector<N_SECTORS_PF; sector++)
+    {
+wedgesPreSector_unroll_loop:
+        for(loop wedge=0; wedge<LINKS_PER_REGION; wedge++)
         {
             PFcluster tempClusters[N_PF_CLUSTERS];
+            
             #pragma HLS ARRAY_PARTITION variable=tempClusters complete dim=0
-
-            makeCaloClusters(linksInSector[(link*LINKS_PER_REGION) + sector], tempClusters);
+            makeCaloClusters(linksInSector[(sector*LINKS_PER_REGION) + wedge], tempClusters);
+            
 
             for(loop i=0; i<N_PF_CLUSTERS; i++)
             {
-                if(tempClusters[i].ET > 0 )
-                {
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].ET  = tempClusters[i].ET;
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].Eta = tempClusters[i].Eta - EXTRA_IN_ETA;
-                    caloClusters[link][(sector*N_PF_CLUSTERS)+i].Phi = tempClusters[i].Phi - 4  + ( link*3 + sector )*4  ; // NEED TO ADD LOGIC AS EXPLANATION
-                }
-            }
-        }
+                 // PROPER ASSIGNMENT
+                 // Need to set the  Etas and Phis Realtive
+                 // Need to make sure the Eta and Phi has proper decimal(uint) representation
+                 // Need to be carefull of the data type conversions
+                  caloClusters[sector*LINKS_PER_REGION+wedge][i] = tempClusters[i] ;
+                  
+                //pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ] = tempClusters[i] ;
+                  pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwPt  = tempClusters[i].ET;
+                  pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwEta = tempClusters[i].Eta - EXTRA_IN_ETA;
+                  pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwPhi = tempClusters[i].Phi - 4  + ( sector*3 + wedge )*4 ;
+                  
+                  //caloClusters[link][(sector*N_PF_CLUSTERS)+i].ET  = tempClusters[i].ET;
+                  //caloClusters[link][(sector*N_PF_CLUSTERS)+i].Eta = tempClusters[i].Eta - EXTRA_IN_ETA;
+                  //caloClusters[link][(sector*N_PF_CLUSTERS)+i].Phi = tempClusters[i].Phi - 4  + ( link*3 + sector )*4  ; 
 
+
+            #ifndef __SYNTHESIS__
+                if(DEBUG_LEVEL > 8)
+                {
+                  if(tempClusters[i].Eta > 0 )
+                  std::cout<<" for sector : "<<sector<<", wedge : "<<wedge
+                           <<" et/eta/phi :: "
+                           <<"calo : "<<tempClusters[i].ET<<" / "<<tempClusters[i].Eta<<" / "<<tempClusters[i].Phi<<" | "
+                           <<"hadc : "<<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwPt<<" / "
+                                      <<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwEta<<" / "
+                                      <<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwPhi<<"  ";
+               }   
+            #endif
+                  pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwEta = pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwEta-region[sector].hwEtaCenter;
+                  pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwPhi = pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwPhi-region[sector].hwPhiCenter;
+                
+            #ifndef __SYNTHESIS__
+                if(DEBUG_LEVEL > 8)
+                {
+                  if(tempClusters[i].Eta > 0 )
+                  std::cout<<"hadc offset : "<<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwPt<<" / "
+                                      <<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwEta<<" / "
+                                      <<pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i].hwPhi<<"  "
+                            <<std::endl;
+                        
+               } 
+            #endif
+            }   
+       }
+    }
+    
+    for(loop sector=0; sector<N_SECTORS_PF; sector++)
+    {
+        int8_t left_sector  =   sector-1;
+        int8_t right_sector =   sector+1;
+        if(left_sector  <  0 )         left_sector  = N_SECTORS-1;
+        if(right_sector == N_SECTORS ) right_sector = 0;
+        
+        uint8_t hadcalo_offset  = N_PF_CLUSTERS*(LINKS_PER_REGION);
+        
+        uint8_t left_offset  = N_PF_CLUSTERS*(LINKS_PER_REGION-1);
+        uint8_t right_offset = 0;
+        
+        for( loop i=0 ; i < 4 ; i++)
+        {
+            if(pfHadronicClusters[left_offset][left_offset].hwPt < pfHadronicClusters[right_sector][right_offset].hwPt )
+            {   
+                // UPDATE THE OFFSETS HERE
+                
+                pfHadronicClusters[sector][hadcalo_offset]    = pfHadronicClusters[right_sector][right_offset];
+                pfHadronicClusters[sector][hadcalo_offset].hwPhi +=12;
+                right_offset++;
+            }
+            else 
+            {
+                // UPDATE THE OFFSETS HERE
+                
+                pfHadronicClusters[sector][hadcalo_offset] = pfHadronicClusters[left_sector][left_offset];
+                pfHadronicClusters[sector][hadcalo_offset].hwPhi -=12;
+                left_offset++;
+
+            }
+            hadcalo_offset++;
+        }
+    }
+
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 8)
+    {
+        for(int i=0; i < N_SECTORS_PF; i++ )
+        {
+            std::cout<<"@@HADCALO | "<< i<<" | ";
+            for(int j =0 ; j< NCALO ; j++)
+            {
+              if( pfHadronicClusters[i][j].hwPt > 0  )
+                std::cout<<" [ "<<region[i].isInside(pfHadronicClusters[i][j])<<" ] "
+                         <<pfHadronicClusters[i][j].hwPt<<","
+                         <<pfHadronicClusters[i][j].hwEta<<","
+                         <<pfHadronicClusters[i][j].hwPhi<<" | ";
+            }
+            std::cout<<"\n";
+        }
+    }
+#endif
+
+    
+    compute(pfselne, pfHadronicClusters, region);
+
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 0)
+    {
+        for(int i=0; i < N_SECTORS_PF; i++ )
+        {
+            std::cout<<"@@PUPPI | "<< i<<" | ";
+            for(int j =0 ; j< NNEUTRALS ; j++)
+            {
+                std::cout<<pfselne[i][j].hwPt<<","<<pfselne[i][j].hwEta<<","<<pfselne[i][j].hwPhi<<","<<pfselne[i][j].hwPuppiW()<<" | ";
+            }
+            std::cout<<"\n";
+        }
+    }
+#endif
+
+
+
+/*
 #ifndef __SYNTHESIS__
         if (DEBUG_LEVEL > 5)
         {
@@ -343,8 +503,7 @@ sector_unroll_loop:
         for(int i =0 ; i< N_SORT_ELEMENTS ; i++)
         {
             ClustersOut[link][i]= sortedClusters[i];
-        }
-    }
+        }*/
 }
 
 

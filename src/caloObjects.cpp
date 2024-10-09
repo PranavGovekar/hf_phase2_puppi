@@ -341,16 +341,16 @@ void Exy (hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],
 			if(superTowers[eta][phi].energy > 20){
 				temp_HT += superTowers[eta][phi].energy;
 			}
-			std::cout  << "eta : " << eta << " phi : " << phi << " [Ex : " << Ex << " Ey : " << Ey << "]\n";
+		//	std::cout  << "eta : " << eta << " phi : " << phi << " [Ex : " << Ex << " Ey : " << Ey << "]\n";
 		}
 	}
 
 	ap_fixed<32,16> MET2 = (Ex*Ex) + (Ey*Ey);
-	std::cout << "MET^2 : " << MET2 << endl;
 	MET = hls::sqrt((Ex*Ex) + (Ey*Ey));
 	HT = temp_HT;
 
 #ifndef __SYNTHESIS__
+        if(DEBUG_LEVEL > 8){
 	for(loop eta = 1; eta < 5; eta++) {
 		for(loop phi = 1; phi < 25; phi++) {
 			std::cout << "\t" << superTowers[eta][phi].energy;
@@ -358,9 +358,13 @@ void Exy (hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],
 		std::cout<<endl;
 	}
 	std::cout<<endl;
-	std::cout << "Ex : " << Ex << "\nEy : " << Ey << endl;
-	std::cout << "MET : " << MET << "\nHT : " << HT << endl;
-	std::cout<<endl;
+        }
+        if(DEBUG_LEVEL > 2){
+	    std::cout << "Ex : " << Ex << "\nEy : " << Ey << endl;
+	    std::cout << "MET^2 : " << MET2 << endl;
+	    std::cout << "MET : " << MET << "\nHT : " << HT << endl;
+	    std::cout<<endl;
+        }
 #endif
 }
 
