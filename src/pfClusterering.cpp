@@ -447,6 +447,8 @@ wedgesPreSector_unroll_loop:
                  // Need to make sure the Eta and Phi has proper decimal(uint) representation
                  // Need to be carefull of the data type conversions
                   caloClusters[sector*LINKS_PER_REGION+wedge][i] = tempClusters[i] ;
+                  caloClusters[sector*LINKS_PER_REGION+wedge][i].Eta = tempClusters[i].Eta - EXTRA_IN_ETA;              
+                  caloClusters[sector*LINKS_PER_REGION+wedge][i].Phi = tempClusters[i].Phi - 4  + ( sector*3 + wedge )*4  ;
                   
                 //pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ] = tempClusters[i] ;
                   pfHadronicClusters[sector][N_PF_CLUSTERS*wedge + i ].hwPt  = tempClusters[i].ET;
@@ -491,13 +493,18 @@ wedgesPreSector_unroll_loop:
     if(DEBUG_LEVEL > 0)
     {
     for(loop sector=0; sector<N_SECTORS_PF; sector++)
-        for(int i=0; i < N_OUTPUT_LINKS; i++ )
         {
-            std::cout<<"@@CALOCLUSTER | "<< i<<" | ";
-            for(int wedge =0 ; wedge< 3 ; wedge++)
+            std::cout<<"@@CALOCLUSTER | "<< sector<<" | ";
+            for(int wedge =0 ; wedge<LINKS_PER_REGION ; wedge++)
             {
                 for(int i =0 ; i <4 ;i++)
-                  std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].data()<<" | " ;
+                 {
+               //     std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].ET<<","
+               //              <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Eta<<"," 
+               //              <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Phi<<"" 
+               //              <<" | " ;
+                 std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].data()<<" | " ;
+                }
             }
             std::cout<<"\n";
         }
