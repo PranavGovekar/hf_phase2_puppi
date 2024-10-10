@@ -1,4 +1,3 @@
-#define N_SECTORS_PF 6
 #include "pfClusterering.h"
 
 // this function takes in 3 links and makes a region of 3 wedges (1 + 2 extra) i.e eta:(12+2) and phi:(4+8)
@@ -226,6 +225,13 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
                 Clusters[cluster].Eta = etaC;
                 Clusters[cluster].Phi = phiC;
                 Clusters[cluster].ET = etaSum;
+                if(etaSum = 2*HFRegion[etaC][phiC].energy  )
+                {
+                    Clusters[cluster].isEG= 1;
+                }
+                else {
+                    Clusters[cluster].isEG= 0;
+                }
             }
         }
     }
@@ -283,9 +289,94 @@ puppi:
 }
 
 
+template <int SIZE, int N_POWER_2> void getTopItemIndexInArray(const ap_uint<12> arrayIn[SIZE],ap_uint<8> &index)
+{
+    ap_uint<12> array[N_POWER_2];
+    ap_uint<8> indices[N_POWER_2];
+    for(uint8_t i=0;i < SIZE;i++)
+    {
+        array[i]=arrayIn[i];
+        indices[i]=i;
+    }   
+    for(uint8_t i=SIZE;i < N_POWER_2;i++)
+    {
+        array[i]=0;
+        indices[i]=SIZE-1;
+    }   
+
+    for(loop i=N_POWER_2; i>1; i=(i/2))
+    {
+        for(uint8_t j=0; j < i/2; j++)
+        {
+            
+            if(array[indices[j]] < array[indices[j + i/2]])
+            {
+                 indices[j] = indices[j+i/2];
+            }
+           // else {
+           //       indices[j] = indices[j];
+           //  }
+        }
+    }
+    index=indices[0]; 
+}
+void selectEGClusters(const PFcluster caloClusters[N_INPUT_LINKS][N_SORT_ELEMENTS] ,PFcluster egClusters[8] ) // TODO , remove hardcoded
+{
+
+    PFcluster  egCandidateClusters[N_SECTORS_PF*12/*N_SORT_ELEMENTS*LINKS_PER_REGION*/];
+    ap_uint<12> egCandidateEnergies[N_SECTORS_PF*12/*N_SORT_ELEMENTS*LINKS_PER_REGION*/];
+    
+    PFcluster  egSelectedClusters[8];
+    
+    /*
+    PFcluster inputClusters[N_INPUT_LINKS][N_SORT_ELEMENTS]
+    for(int i =0 ; i < N_INPUT_LINKS ; i++) {
+        for(int j =0 ; j < N_SORT_ELEMENTS ; j++) {
+            inputClusters[i][j]=caloClusters[i][j];
+        }
+    }
+    */
+
+    // TODO .: REMOVE THE HARDCODING !
+    
+
+    for(int sector=0 ; sector < 6 ; sector++)
+    {
+        for(int wedge=0 ; wedge < 3 ; wedge++)
+        {
+            // can take top 3 per wedge too ! reducing the complexy of memory for 128 --> 64
+            for(int i =0 ; i < 4 ; i++) {        
+                int idx = (sector*3 + wedge)*4 +i ;
+                //egSelectsClusters[idx] = inputClusters[sector*3 + wedge][i] ;
+                egCandidateClusters[idx]   = caloClusters[sector*3 + wedge][i] ;
+                egCandidateEnergies[idx]   = caloClusters[sector*3 + wedge][i].ET ;
+                // std::cout<<" idx : "<<int(idx)<<" [ "<<sector<<","<<wedge<<" ] : "<<egCandidateEnergies[idx]<<"\n";
+
+      //          if( ! egCandidateClusters[idx].isEG ) egCandidateEnergies[idx]=0;
+            }
+        }
+    }
+    
+    ap_uint<8> select_index;
+    for(int i=0 ; i < 8 ; i++)
+    {
+        getTopItemIndexInArray<N_SECTORS_PF*12,128>(egCandidateEnergies,select_index);
+        //std::cout<<"  eg --> "<<i<<" : "<<  egCandidateEnergies[select_index]<<" ["<<select_index <<"] \n";
+        egSelectedClusters[i] = egCandidateClusters[select_index]; 
+        egCandidateEnergies[select_index]=0;
+    }
+
+    for(int i=0 ; i < 8 ; i++)
+    {
+        egClusters[i] = egSelectedClusters[i];
+    }
 
 
-void makePFClusters( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster ClustersOut[N_OUTPUT_LINKS][N_SORT_ELEMENTS]    )
+}
+
+
+
+void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster egClusters[8] , l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS]   )
 {
     // TODO : FOR LOOP TO DO THIS PLEASE !! :)
     ap_uint<LINK_WIDTH> linksInSector[N_SECTORS][3] ;
@@ -306,6 +397,7 @@ void makePFClusters( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster
     // Too many '#define ed' elements ?
     // PFcluster caloClusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
     PFcluster caloClusters[N_INPUT_LINKS][N_SORT_ELEMENTS];
+    PFcluster egCandidates[8]; // TODO Remive HARDCODING
     #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
 
     l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS];
@@ -395,6 +487,25 @@ wedgesPreSector_unroll_loop:
             }   
        }
     }
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 0)
+    {
+    for(loop sector=0; sector<N_SECTORS_PF; sector++)
+        for(int i=0; i < N_OUTPUT_LINKS; i++ )
+        {
+            std::cout<<"@@CALOCLUSTER | "<< i<<" | ";
+            for(int wedge =0 ; wedge< 3 ; wedge++)
+            {
+                for(int i =0 ; i <4 ;i++)
+                  std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].data()<<" | " ;
+            }
+            std::cout<<"\n";
+        }
+    }
+#endif
+
+
+   selectEGClusters(caloClusters,egCandidates);
     
     for(loop sector=0; sector<N_SECTORS_PF; sector++)
     {
@@ -432,7 +543,7 @@ wedgesPreSector_unroll_loop:
     }
 
 #ifndef __SYNTHESIS__
-    if(DEBUG_LEVEL > 8)
+    if(DEBUG_LEVEL > 5)
     {
         for(int i=0; i < N_SECTORS_PF; i++ )
         {
@@ -453,57 +564,19 @@ wedgesPreSector_unroll_loop:
     
     compute(pfselne, pfHadronicClusters, region);
 
-#ifndef __SYNTHESIS__
-    if(DEBUG_LEVEL > 0)
+    for(int i=0;i < 8 ; i++)
     {
-        for(int i=0; i < N_SECTORS_PF; i++ )
+        egClusters[i]=egCandidates[i];
+    }
+    
+    for(int i=0; i < N_SECTORS_PF; i++ )
+    {
+        for(int j =0 ; j< NNEUTRALS ; j++)
         {
-            std::cout<<"@@PUPPI | "<< i<<" | ";
-            for(int j =0 ; j< NNEUTRALS ; j++)
-            {
-                std::cout<<pfselne[i][j].hwPt<<","<<pfselne[i][j].hwEta<<","<<pfselne[i][j].hwPhi<<","<<pfselne[i][j].hwPuppiW()<<" | ";
-            }
-            std::cout<<"\n";
+            pfSelectedNutrals[i][j]=pfselne[i][j];
         }
     }
-#endif
 
-
-
-/*
-#ifndef __SYNTHESIS__
-        if (DEBUG_LEVEL > 5)
-        {
-            std::cout<< "Before Sorting : " << endl;
-            for(loop cluster=0; cluster<16; cluster++)
-            {
-                std::cout<<"Cluster " << cluster << " E = "<< caloClusters[link][cluster].ET
-                         <<", center = ("<< caloClusters[link][cluster].Eta <<","<< caloClusters[link][cluster].Phi << ")\n";
-            }
-            std::cout<<endl;
-        }
-#endif
-
-        PFcluster sortedClusters[N_SORT_ELEMENTS];
-        #pragma HLS ARRAY_PARTITION variable=sortedClusters complete dim=0
-        bitonicSort16(caloClusters[link], sortedClusters);
-
-#ifndef __SYNTHESIS__
-        if (DEBUG_LEVEL > 2)
-        {
-            std::cout<< "Calo clusters in out link :  "<< link << endl;
-            for(loop cluster=0; cluster<16; cluster++)
-            {
-                std::cout<<"  Cluster " << cluster << " E = "<< sortedClusters[cluster].ET
-                         <<", center = ("<< sortedClusters[cluster].Eta <<","<< sortedClusters[cluster].Phi << ")\n";
-            }
-            std::cout<<endl;
-        }
-#endif
-        for(int i =0 ; i< N_SORT_ELEMENTS ; i++)
-        {
-            ClustersOut[link][i]= sortedClusters[i];
-        }*/
 }
 
 

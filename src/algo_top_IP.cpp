@@ -44,7 +44,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
-  //  makeCaloObjects(link_in, Jets,Taus);
+    makeCaloObjects(link_in, Jets,Taus);
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 0)
     {
@@ -64,48 +64,46 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
-    PFcluster caloClusters[N_OUTPUT_LINKS][N_SORT_ELEMENTS];
-    makePFClusters(link_in,caloClusters );
+    PFcluster egClusters[8]; // TODO . rmove hardcoding
+    l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS];
+    
+    doPFClustringChain(link_in, egClusters , pfSelectedNutrals );
 
+
+    #ifndef __SYNTHESIS__
+           if(DEBUG_LEVEL > 0)
+           {
+                std::cout<<"@@EGClusters | " ;
+                for(int i=0;i < 8 ; i++)
+                {
+                    std::cout<<egClusters[i].ET<<","<<egClusters[i].Eta<<","<<egClusters[i].Phi<<" | ";
+                    //std::cout<<egClusters[i].data()<<" | ";
+                }
+                std::cout<<"\n";
+          } 
+    #endif
+
+   
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 0)
     {
-        for(int i=0; i < N_OUTPUT_LINKS; i++ )
+        for(int i=0; i < N_SECTORS_PF; i++ )
         {
-            std::cout<<"@@CALOCLUSTER | "<< i<<" | ";
-            for(int j =0 ; j< N_SORT_ELEMENTS ; j++)
+            std::cout<<"@@PUPPI | "<< i<<" | ";
+            for(int j =0 ; j< NNEUTRALS ; j++)
             {
-                std::cout<<caloClusters[i][j].data()<<" | ";
+                std::cout<<pfSelectedNutrals[i][j].hwPt<<","<<pfSelectedNutrals[i][j].hwEta<<","<<pfSelectedNutrals[i][j].hwPhi<<","<<pfSelectedNutrals[i][j].hwPuppiW()<<" | ";
+                //std::cout<<pfSelectedNutrals[i][j].data()<<" | ";
             }
             std::cout<<"\n";
         }
     }
 #endif
 
+ 
+
 
     // PUPPI Funtionality
-    l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS];
-    l1ct::HadCaloObj H_in_regionized[N_SECTORS][NCALO];
-
-    #pragma HLS ARRAY_PARTITION variable=H_in_regionized complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=pfselne complete dim=0
-
-    ap_uint<12> start, end;
-
-    // define the  sector boundaries and overlaps
-    l1ct::PFRegion region[N_SECTORS];
-regions_init:
-    for(int i=0 ; i < N_SECTORS ; i++)
-    {
-        region[i].hwEtaCenter = l1ct::glbeta_t(12);
-        region[i].hwEtaHalfWidth = l1ct::eta_t(12);
-        region[i].hwEtaExtra = l1ct::eta_t(0);
-        region[i].hwPhiExtra = l1ct::phi_t(2);
-        region[i].hwPhiHalfWidth = l1ct::phi_t(6);
-        region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
-    }
-
-
 
     //initialize the neutral hadron objects
     //hadcalo_init:

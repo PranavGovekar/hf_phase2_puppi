@@ -25,7 +25,7 @@
 #define N_SECTORS 18
 #define N_PF 48
 #define N_EXTRA (NCALO - NNEUTRALS)
-
+#define N_SECTORS_PF 6
 
 #define N_PF_CLUSTERS 4
 #define NTOWER_IN_ETA_PER_SECTOR (TOWERS_IN_ETA + EXTRA_IN_ETA*2)
