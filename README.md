@@ -41,7 +41,7 @@ Generates the plots for PF-Clusters,HFTowers,Jets in HF geometry.
 ./run.sh  -csim | tee output.log
 
 # run the plotter
-python3 makeValidationPlots.py  -i output.log --tag v1
+python3 scripts/makeValidationPlots.py  -i output.log --tag v1
 
 ```
 TODO :
