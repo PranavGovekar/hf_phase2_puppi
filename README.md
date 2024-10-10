@@ -27,8 +27,25 @@ Before running C Simulation make a directory named inputs ``mkdir inputs``  and 
 
 ### Helper Scripts
 
+**Pattern File Generation**
 Generate HF pattern files with a customizable firing pattern. Please edit the files to customize the Et distribution of the clusters. For geenrating different configuration with a specific file , please change the seed of the generator by speciying it in the argument line through `-s`
 
 ```
 []$ python scripts/makeHFRawEvent.py  -s 799 -t hfV0
 ```
+**Valitation Plots**
+Dependancies : `numpy` , `matplotlib`
+Generates the plots for PF-Clusters,HFTowers,Jets in HF geometry.
+```
+# First pipe the CSIM output to a file.
+./run.sh  -csim | tee output.log
+
+# run the plotter
+python3 makeValidationPlots.py  -i output.log --tag v1
+
+```
+TODO :
+    * validation plots for regionization steps
+    * validation plots for EGs
+    * validation plots for Energy Sums
+    * validation plots for puppi objects
