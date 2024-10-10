@@ -45,7 +45,7 @@ python3 makeValidationPlots.py  -i output.log --tag v1
 
 ```
 TODO :
-    * validation plots for regionization steps
-    * validation plots for EGs
-    * validation plots for Energy Sums
-    * validation plots for puppi objects
+ * validation plots for regionization steps
+ * validation plots for EGs
+ * validation plots for Energy Sums
+ * validation plots for puppi objects
