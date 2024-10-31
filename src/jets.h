@@ -9,7 +9,7 @@ public:
     ap_uint<12> ET;
     ap_uint<3> Eta;
     ap_uint<7> Phi;
-    ap_uint<12> seedET;
+    ap_uint<14> seedET;
 
     jets()
     {

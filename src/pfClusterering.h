@@ -30,7 +30,11 @@ void makeCaloClusters(const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION], P
 
 void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sector, const ap_uint<7> sector);
 
-void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], PFcluster egClusters[8] , l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS]   );
+void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
+		l1ct::HadCaloObj egClusters[8],
+		l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS],
+		ap_fixed<32,16>& Ex,
+		ap_fixed<32,16>& Ey);
 
 
 #endif

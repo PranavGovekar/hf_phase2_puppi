@@ -255,7 +255,7 @@ void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]) {
 void fwdlinpuppiPt(const HadCaloObj caloin[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]) {
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=puppiPts complete
-    #pragma HLS pipeline II=2
+    #pragma HLS PIPELINE
 
     ap_uint<32> sums[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sums complete

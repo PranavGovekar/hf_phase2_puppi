@@ -14,13 +14,13 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
         for(loop i=0; i<TOWERS_IN_ETA-1; i++)
         {
             hftower halfEnergy = hftower(link_in.range((i*10)+9, i*10));
-            halfEnergy.energy = halfEnergy.energy >> 1;
+            halfEnergy.energy = halfEnergy.energy << 1;
 
             towerGrid[i][j] = halfEnergy;
             towerGrid[i][j+1] = halfEnergy;
 
             hftower halfEnergy_0 = hftower(link_in.range((i*10+110)+9, i*10+110));
-            halfEnergy_0.energy = halfEnergy_0.energy >> 1;
+            halfEnergy_0.energy = halfEnergy_0.energy << 1;
 
             towerGrid[i][j+2] = halfEnergy_0;
             towerGrid[i][j+3] = halfEnergy_0;

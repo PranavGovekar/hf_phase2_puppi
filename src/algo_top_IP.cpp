@@ -1,6 +1,52 @@
 #include "algo_topIP1.h"
 
-void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[N_OUTPUT_LINKS])
+void packPuppi(	l1ct::PuppiObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out){
+#pragma HLS INLINE
+	const ap_uint<8> BW = 64;
+	ap_uint<12> start = 0;
+	ap_uint<576> temp_link;
+
+    for(loop idx=0; idx<NNEUTRALS; idx++) {
+    	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
+
+        start = start + BW;
+    }
+
+    link_out = temp_link;
+}
+
+void packEG(l1ct::HadCaloObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out){
+	const ap_uint<8> BW = 64;
+	ap_uint<12> start = 0;
+	ap_uint<576> temp_link;
+
+    for(loop idx=0; idx<NNEUTRALS; idx++) {
+    	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
+
+        start = start + BW;
+    }
+
+    link_out = temp_link;
+}
+
+void packJets(jets Jets[9], ap_uint<576> &link_out){
+	const ap_uint<8> BW = 64;
+	ap_uint<12> start = 0;
+	ap_uint<576> temp_link;
+
+    for(loop idx=0; idx<6; idx++) {
+    	temp_link.range(start+(BW-1),start) = Jets[idx].data();
+
+        start = start + BW;
+    }
+
+    link_out = temp_link;
+}
+
+
+void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[10])
 {
 
     #pragma HLS PIPELINE II=9
@@ -44,7 +90,12 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
-    makeCaloObjects(link_in, Jets,Taus);
+    ap_fixed<32,16> Ex;
+	ap_fixed<32,16> Ey;
+	ap_uint<12> HT;
+
+    makeCaloObjects(link_in, Jets,Taus, Ex, Ey, HT);
+
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 0)
     {
@@ -64,10 +115,12 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
-    PFcluster egClusters[8]; // TODO . rmove hardcoding
+    l1ct::HadCaloObj egClusters[8]; // TODO . rmove hardcoding
     l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS];
+    ap_fixed<32,16> Ex_pu;
+	ap_fixed<32,16> Ey_pu;
     
-    doPFClustringChain(link_in, egClusters , pfSelectedNutrals );
+    doPFClustringChain(link_in, egClusters , pfSelectedNutrals, Ex_pu, Ey_pu);
 
 
     #ifndef __SYNTHESIS__
@@ -76,7 +129,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
                 std::cout<<"@@EGClusters | " ;
                 for(int i=0;i < 8 ; i++)
                 {
-                    std::cout<<egClusters[i].ET<<","<<egClusters[i].Eta<<","<<egClusters[i].Phi<<" | ";
+                    std::cout<<egClusters[i].hwPt<<","<<egClusters[i].hwEta<<","<<egClusters[i].hwPhi<<" | ";
                     //std::cout<<egClusters[i].data()<<" | ";
                 }
                 std::cout<<"\n";
@@ -100,35 +153,21 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     }
 #endif
 
- 
 
+    for(int i=0; i < N_SECTORS_PF; i++ ){
+    	packPuppi(pfSelectedNutrals[i], link_out[i]);
+	}
 
-    // PUPPI Funtionality
+    packEG(egClusters, link_out[6]);
+    packJets(Jets, link_out[7]);
+    packJets(Taus, link_out[8]);
 
-    //initialize the neutral hadron objects
-    //hadcalo_init:
-    //    for( loop  i= 0; i < N_SECTORS; i++) {
-    //    #pragma HLS unroll
-    //        for( loop j = 0; j < NCALO ; j++) {
-    //        #pragma HLS unroll
-    //            H_in_regionized[i][j].clear();
-    //        }
-    //    }
-    //unpack and regionize the PF Clusters to the neutral hadron objects
-
-    //unpackLinksToHadCalo(link_in, H_in_regionized, region);
-
-    // invoke puppi for the regionized clusters
-
-    //compute(pfselne, H_in_regionized, region);
-
-
-    // pack the puppi outputs into links
-    //packLinks(pfselne, link_out);
-
-
-
-
+	ap_uint<576> temp_link;
+    temp_link.range(11,0) = ap_uint<12>(Ex);
+    temp_link.range(23,12) = ap_uint<12>(Ey);
+    temp_link.range(35,24) = ap_uint<12>(Ex_pu);
+    temp_link.range(47,36) = ap_uint<12>(Ey_pu);
+    temp_link.range(59,48) = HT;
 
 }
 

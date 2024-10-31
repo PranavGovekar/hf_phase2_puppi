@@ -3,6 +3,8 @@
 #define REG_HF
 #define REG_HF
 
+#define HLS_pipeline_II 3
+
 #include <cmath>
 #include "layer1_objs.h"
 #include "pf.h"

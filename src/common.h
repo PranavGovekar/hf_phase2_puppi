@@ -18,7 +18,7 @@
 #define N_INPUT_LINKS  18
 #define N_OUTPUT_LINKS  6
 
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 1000
 
 #define N_PF_LINK 8
 #define N_PUPPI_LINK 8
