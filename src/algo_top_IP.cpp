@@ -7,6 +7,7 @@ void packPuppi(	l1ct::PuppiObj pfselne[NNEUTRALS],
 	ap_uint<12> start = 0;
 	ap_uint<576> temp_link;
 
+	packPuppi_1_1:
     for(loop idx=0; idx<NNEUTRALS; idx++) {
     	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
 
@@ -22,6 +23,7 @@ void packEG(l1ct::HadCaloObj pfselne[NNEUTRALS],
 	ap_uint<12> start = 0;
 	ap_uint<576> temp_link;
 
+	packEG_1_1:
     for(loop idx=0; idx<NNEUTRALS; idx++) {
     	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
 
@@ -36,6 +38,7 @@ void packJets(jets Jets[9], ap_uint<576> &link_out){
 	ap_uint<12> start = 0;
 	ap_uint<576> temp_link;
 
+	packJets_1_1:
     for(loop idx=0; idx<6; idx++) {
     	temp_link.range(start+(BW-1),start) = Jets[idx].data();
 
@@ -56,6 +59,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 
 	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
 #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+	algo_topIP1_1_1:
 	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
 		__link_in[link] = link_in[link];
 	}
@@ -161,6 +165,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 #endif
 
 
+    algo_topIP1_2_1:
     for(int i=0; i < N_SECTORS_PF; i++ ){
     	packPuppi(pfSelectedNutrals[i], link_out[i]);
 	}

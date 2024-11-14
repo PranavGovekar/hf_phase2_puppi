@@ -62,6 +62,7 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
 }
 
 hftower  bestOf2(const hftower& ecaltp0, const hftower& ecaltp1) {
+#pragma HLS INLINE off
 #pragma HLS latency min=1
 
 hftower x;
