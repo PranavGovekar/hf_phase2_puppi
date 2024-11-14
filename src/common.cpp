@@ -61,6 +61,15 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
 #endif
 }
 
+hftower  bestOf2(const hftower& ecaltp0, const hftower& ecaltp1) {
+#pragma HLS latency min=1
+
+hftower x;
+x = (ecaltp0.energy > ecaltp1.energy)?ecaltp0:ecaltp1;
+return x;
+
+}
+
 
 template <int SIZE, int N_POWER_2>
 void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center)

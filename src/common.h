@@ -42,5 +42,7 @@ void processInputLink(ap_uint<LINK_WIDTH> link_in,
 template <int SIZE, int N_POWER_2>
 void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center);
 
+hftower bestOf2(const hftower& ecaltp0, const hftower& ecaltp1);
+
 
 #endif

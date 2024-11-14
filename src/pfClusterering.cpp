@@ -22,6 +22,9 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
             for(loop phi=0; phi<TOWERS_IN_PHI/N_INPUT_LINKS; phi++)
             {
                 HFRegions[eta+1][(link*(TOWERS_IN_PHI/N_INPUT_LINKS))+phi] = HFTowers[eta][phi];
+
+                HFRegions[eta+1][(link*(TOWERS_IN_PHI/N_INPUT_LINKS))+phi].eta = eta+1;
+                HFRegions[eta+1][(link*(TOWERS_IN_PHI/N_INPUT_LINKS))+phi].phi = 4*link + phi;
             }
         }
     }
@@ -43,53 +46,38 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
 #endif
 }
 
-void findMaxEnergyTowerInPhi(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
-                             const ap_uint<5> etaCenters[6], ap_uint<8>& phiC)
+void findMaxEnergyTowerInPhi(const hftower EtaTowers[6],
+							hftower& phiC)
 {
-    #pragma HLS PIPELINE II=1
     hftower tempArray[8];
-    ap_uint<4> index[8];
-
     #pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=index complete dim=0
 
-    for(loop i=0; i<6; i++)
-    {
-        tempArray[i] = HFRegion[etaCenters[i]][i+3];
-        index[i] = i;
+    for(loop i=0; i<6; i++){
+        tempArray[i] = EtaTowers[i];
     }
 
     for(loop i=8; i>1; i=(i/2))
     {
         for(loop j=0; j < i/2; j++)
         {
-            if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy)
-            {
-                index[j] = index[(j*2)+1];
-            }
-            else
-            {
-                index[j] = index[j*2];
-            }
+        	tempArray[j] = bestOf2(tempArray[j*2], tempArray[(j*2) + 1]);
         }
     }
 
-    phiC = index[0];
+    phiC = tempArray[0];
 }
 
 
-void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>& etaC)
+void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], hftower& etaC)
 {
     hftower tempArray[16];
-    ap_uint<5> index[16];
 
     #pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=index complete dim=0
+
 
     for(loop i=0; i<12; i++)
     {
         tempArray[i] = EtaTowers[i];
-        index[i] = i;
     }
 
 
@@ -97,18 +85,12 @@ void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], ap_uint<5>&
     {
         for(loop j=0; j < i/2; j++)
         {
-            if(tempArray[index[j*2]].energy < tempArray[index[(j*2) + 1]].energy)
-            {
-                index[j] = index[(j*2)+1];
-            }
-            else
-            {
-                index[j] = index[j*2];
-            }
+        	tempArray[j] = bestOf2(tempArray[j*2], tempArray[(j*2) + 1]);
         }
     }
 
-    etaC = index[0];
+    etaC = tempArray[0];
+
 }
 
 
@@ -116,11 +98,12 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
                         ap_uint<5>& etaC,
                         ap_uint<8>& phiC)
 {
+#pragma HLS PIPELINE
     #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
-    ap_uint<5> towersPhi[6];
+	hftower towersPhi[6];
     #pragma HLS ARRAY_PARTITION variable=towersPhi complete dim=0
-    ap_uint<8> tempPhi;
+	hftower tempPhi;
     for(ap_uint<5> phi = 3; phi < 9; phi++)
     {
         hftower towersEta[12];
@@ -132,10 +115,10 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
         findMaxEnergyTowerInEta(towersEta, towersPhi[phi-3]);
     }
 
-    findMaxEnergyTowerInPhi(HFRegion, towersPhi, tempPhi);
+    findMaxEnergyTowerInPhi(towersPhi, tempPhi);
 
-    etaC = towersPhi[tempPhi];
-    phiC = tempPhi + 3;
+    etaC = tempPhi.eta;
+    phiC = tempPhi.phi;
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL >7 )
     {
@@ -143,6 +126,7 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
     }
 #endif
 }
+
 
 void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
                            ap_uint<5> etaC,
@@ -192,41 +176,11 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
     }
 }
 
-// Function to form the cluster and zero out the tower energies
-//void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
-//                           ap_uint<5> etaC,
-//                           ap_uint<8> phiC,
-//                           ap_uint<12>& etaSum)
-//{
-//
-//    #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
-//
-//    etaSum = HFRegion[etaC][phiC].energy +
-//             HFRegion[etaC+1][phiC].energy +
-//             HFRegion[etaC-1][phiC].energy +
-//             HFRegion[etaC][phiC+1].energy +
-//             HFRegion[etaC][phiC-1].energy +
-//             HFRegion[etaC+1][phiC+1].energy +
-//             HFRegion[etaC-1][phiC+1].energy +
-//             HFRegion[etaC+1][phiC-1].energy +
-//             HFRegion[etaC-1][phiC-1].energy;
-//
-//    HFRegion[etaC][phiC].energy = 0;
-//    HFRegion[etaC+1][phiC].energy = 0;
-//    HFRegion[etaC-1][phiC].energy = 0;
-//    HFRegion[etaC][phiC+1].energy = 0;
-//    HFRegion[etaC][phiC-1].energy = 0;
-//    HFRegion[etaC+1][phiC+1].energy = 0;
-//    HFRegion[etaC-1][phiC+1].energy = 0;
-//    HFRegion[etaC+1][phiC-1].energy = 0;
-//    HFRegion[etaC-1][phiC-1].energy = 0;
-//}
 
 // Main clustrizer function
 void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],PFcluster Clusters[N_PF_CLUSTERS])
 {
 
-    #pragma HLS PIPELINE
     #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
 
     hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR];
@@ -296,82 +250,9 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
 #endif
 }
 
-void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sector, const ap_uint<7> sector)
-{
-
-    #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
-
-    ap_uint<10> start = 0;
-    ap_uint<10> end = start + 63;
-    PFcluster zero;
-packer_loop:
-    for (int cluster = 0; cluster < 8; cluster++)
-    {
-        #pragma HLS UNROLL
-        if (Clusters[cluster].ET > 0)
-        {
-            link_out_sector.range(end, start) = Clusters[cluster].data();
-        }
-        else
-        {
-            link_out_sector.range(end, start) = 0 ;//zero.data();
-        }
-        start += 64;
-        end = start + 63;
-    }
-}
-
-//void compute(
-//    l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS],
-//    l1ct::HadCaloObj H_in_regionized[N_SECTORS_PF][NCALO],
-//    const l1ct::PFRegion region[N_SECTORS_PF]
-//)
-//{
-//    # pragma HLS INLINE off
-//puppi:
-//    for(loop i=0; i<N_SECTORS_PF; i++)
-//    {
-//        fwdlinpuppi(region[i], H_in_regionized[i], pfselne[i]);
-//    }
-//}
-
-
-//template <int SIZE, int N_POWER_2> void getTopItemIndexInArray(const ap_uint<12> arrayIn[SIZE],ap_uint<8> &index)
-//{
-//    ap_uint<12> array[N_POWER_2];
-//    ap_uint<8> indices[N_POWER_2];
-//    for(uint8_t i=0;i < SIZE;i++)
-//    {
-//        array[i]=arrayIn[i];
-//        indices[i]=i;
-//    }
-//    for(uint8_t i=SIZE;i < N_POWER_2;i++)
-//    {
-//        array[i]=0;
-//        indices[i]=SIZE-1;
-//    }
-//
-//    for(loop i=N_POWER_2; i>1; i=(i/2))
-//    {
-//        for(uint8_t j=0; j < i/2; j++)
-//        {
-//
-//            if(array[indices[j]] < array[indices[j + i/2]])
-//            {
-//                 indices[j] = indices[j+i/2];
-//            }
-//           // else {
-//           //       indices[j] = indices[j];
-//           //  }
-//        }
-//    }
-//    index=indices[0];
-//}
-
 void findMaxEnergyPFCluster(const ap_uint<12> EtaTowers[72], ap_uint<8>& etaC)
 {
-    #pragma HLS PIPELINE II=1
-	ap_uint<12> tempArray[72];
+	ap_uint<12> tempArray[128];
 	ap_uint<8> index[128];
 
     #pragma HLS ARRAY_PARTITION variable=tempArray complete dim=0
@@ -382,25 +263,25 @@ void findMaxEnergyPFCluster(const ap_uint<12> EtaTowers[72], ap_uint<8>& etaC)
         tempArray[i] = EtaTowers[i];
         index[i] = i;
     }
-//    for(loop i=72; i<128; i++)
-//    {
-//        tempArray[i] = 0;
-//        index[i] = 128-i;
-//    }
+    for(loop i=72; i<128; i++)
+    {
+        tempArray[i] = 0;
+        index[i] = 127;
+    }
 
 
     for(loop i=128; i>1; i=(i/2))
     {
         for(loop j=0; j < i/2; j++)
         {
-            if(tempArray[index[j]] < tempArray[index[j + i/2]])
+            if(tempArray[index[j*2]] < tempArray[index[(j*2) + 1]])
             {
-                index[j] = index[j+i/2];
+                index[j] = index[(j*2)+1];
             }
-//            else
-//            {
-//                index[j] = index[j*2];
-//            }
+            else
+            {
+                index[j] = index[j*2];
+            }
         }
     }
 
@@ -445,8 +326,6 @@ template <int SIZE, int N_POWER_2> void getTopItemIndexInArray(const ap_uint<12>
 
 void selectEGClusters(const PFcluster caloClusters[N_INPUT_LINKS][N_SORT_ELEMENTS] ,l1ct::HadCaloObj egClusters[8] ) // TODO , remove hardcoded
 {
-#pragma HLS PIPELINE
-
     PFcluster  egCandidateClusters[N_SECTORS_PF*12/*N_SORT_ELEMENTS*LINKS_PER_REGION*/];
 #pragma HLS ARRAY_PARTITION variable=egCandidateClusters complete dim=0
     ap_uint<12> egCandidateEnergies[N_SECTORS_PF*12/*N_SORT_ELEMENTS*LINKS_PER_REGION*/];
@@ -466,7 +345,7 @@ void selectEGClusters(const PFcluster caloClusters[N_INPUT_LINKS][N_SORT_ELEMENT
                 egCandidateEnergies[idx]   = caloClusters[sector*3 + wedge][i].ET ;
                 // std::cout<<" idx : "<<int(idx)<<" [ "<<sector<<","<<wedge<<" ] : "<<egCandidateEnergies[idx]<<"\n";
 
-      //          if( ! egCandidateClusters[idx].isEG ) egCandidateEnergies[idx]=0;
+                if( ! egCandidateClusters[idx].isEG ) egCandidateEnergies[idx]=0;
             }
         }
     }
@@ -640,7 +519,7 @@ wedgesPreSector_unroll_loop:
 #endif
 
 
-   selectEGClusters(caloClusters,egCandidates);
+//   selectEGClusters(caloClusters,egCandidates);
     
     for(loop sector=0; sector<N_SECTORS_PF; sector++)
     {
@@ -717,6 +596,7 @@ wedgesPreSector_unroll_loop:
             -0.9763, -0.9537, -0.9239, -0.8870, -0.8434, -0.7934, -0.7373, -0.6756,
             -0.6088, -0.5373, -0.4617, -0.3827, -0.3007, -0.2164, -0.1305, -0.0436};
 
+#pragma HLS ARRAY_PARTITION variable=sin_LUT complete dim=0
 
     for(int i=0;i < 8 ; i++)
     {

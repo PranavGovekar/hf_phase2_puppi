@@ -54,6 +54,13 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
     #pragma HLS INTERFACE ap_ctrl_hs port=return
 
+	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
+#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
+		__link_in[link] = link_in[link];
+	}
+
+
     jets Jets[9];
     jets Taus[9];
     #pragma HLS ARRAY_PARTITION variable=Jets complete dim=0
@@ -94,7 +101,7 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 	ap_fixed<32,16> Ey;
 	ap_uint<12> HT;
 
-    makeCaloObjects(link_in, Jets,Taus, Ex, Ey, HT);
+    makeCaloObjects(__link_in, Jets,Taus, Ex, Ey, HT);
 
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 0)
@@ -168,6 +175,8 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
     temp_link.range(35,24) = ap_uint<12>(Ex_pu);
     temp_link.range(47,36) = ap_uint<12>(Ey_pu);
     temp_link.range(59,48) = HT;
+
+    link_out[9] = temp_link;
 
 }
 
