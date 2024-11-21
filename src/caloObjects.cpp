@@ -293,8 +293,8 @@ void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],jets
 //            phiC=0;
 //        }
         Jet[idx].ET  = etSum;
-        Jet[idx].Eta = etaC;
-        Jet[idx].Phi = phiC;
+        Jet[idx].Eta = etaC-1;
+        Jet[idx].Phi = phiC-1;
 
     }
 

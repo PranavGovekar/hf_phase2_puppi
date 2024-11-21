@@ -26,7 +26,10 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
 void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
                            ap_uint<5> etaC, ap_uint<8> phiC, ap_uint<12>& etaSum);
 
-void makeCaloClusters(const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION], PFcluster Clusters[N_PF_CLUSTERS]);
+void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
+		PFcluster Clusters[N_PF_CLUSTERS],
+		PFcluster EGClusters[N_PF_CLUSTERS],
+		const ap_uint<10> sector);
 
 void packer(PFcluster Clusters[N_PF_CLUSTERS], const ap_uint<576>& link_out_sector, const ap_uint<7> sector);
 

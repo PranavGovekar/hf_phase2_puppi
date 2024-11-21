@@ -138,8 +138,9 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
 void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
                            ap_uint<5> etaC,
                            ap_uint<8> phiC,
-                           ap_uint<12>& etaSum) {
+                           ap_uint<12>& etSum) {
 
+	ap_uint<12> etSum__ = 0;
     #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
     ap_uint<1> mask[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR] = {0};
@@ -161,7 +162,7 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
     for (ap_uint<5> i = 0; i < NTOWER_IN_ETA_PER_SECTOR; i++) {
     	formClusterAndZeroOut_2_2:
         for (ap_uint<8> j = 0; j < NTOWER_IN_PHI_PER_SECTOR; j++) {
-            etaSum += HFRegion[i][j].energy * mask[i][j];
+        	etSum__ += HFRegion[i][j].energy * mask[i][j];
         }
     }
 
@@ -180,10 +181,12 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
             HFRegion[i][j].energy *= zero[i][j];
         }
     }
+
+    etSum = etSum__;
 }
 
 void swap_1(const PFcluster Clusters_in[N_PF_CLUSTERS], PFcluster Clusters_out[N_PF_CLUSTERS]){
-
+#pragma HLS INLINE off
     GreaterSmaller res;
 
     res = AscendDescend(Clusters_in[0], Clusters_in[1]);
@@ -196,7 +199,7 @@ void swap_1(const PFcluster Clusters_in[N_PF_CLUSTERS], PFcluster Clusters_out[N
 }
 
 void swap_2(const PFcluster Clusters_in[N_PF_CLUSTERS], PFcluster Clusters_out[N_PF_CLUSTERS]){
-
+#pragma HLS INLINE off
     GreaterSmaller res;
 
     res = AscendDescend(Clusters_in[0], Clusters_in[3]);
@@ -209,7 +212,7 @@ void swap_2(const PFcluster Clusters_in[N_PF_CLUSTERS], PFcluster Clusters_out[N
 }
 
 void sortPFcluster_4(const PFcluster Clusters_in[N_PF_CLUSTERS], PFcluster Clusters_out[N_PF_CLUSTERS]){
-
+#pragma HLS INLINE off
 	PFcluster temp_1[N_PF_CLUSTERS];
 	PFcluster temp_2[N_PF_CLUSTERS];
 
@@ -255,7 +258,10 @@ void findMaxEnergyPFcluster_32(const PFcluster Clusters[18], ap_uint<5>& maxIdx)
 
 
 // Main clustrizer function
-void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],PFcluster Clusters[N_PF_CLUSTERS])
+void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
+		PFcluster Clusters[N_PF_CLUSTERS],
+		PFcluster EGClusters[N_PF_CLUSTERS],
+		const ap_uint<10> sector)
 {
 
     #pragma HLS ARRAY_PARTITION variable=Clusters complete dim=0
@@ -264,6 +270,7 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
     #pragma HLS ARRAY_PARTITION variable=HFRegion complete dim=0
 
     PFcluster Clusters_in [N_PF_CLUSTERS];
+    PFcluster EGClusters_in [N_PF_CLUSTERS];
 
     makeRegion(regionLinks, HFRegion);
 
@@ -272,7 +279,7 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
     {
         for(loop phiI=0; phiI<NTOWER_IN_PHI_PER_SECTOR; phiI++)
         {
-            std::cout<<std::setw(8)<<phiI;
+            std::cout<<std::setw(7)<<phiI;
         }
         std::cout<<"  <--Phi"<<"\n";
         for(loop etaI=0; etaI<NTOWER_IN_ETA_PER_SECTOR; etaI++)
@@ -290,35 +297,53 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],P
     makeCaloClusters_1_1:
     for(loop cluster = 0; cluster < N_PF_CLUSTERS; cluster++)
     {
-        ap_uint<8> phiC;
-        ap_uint<5> etaC;
-        ap_uint<12> etSum = 0;
+        ap_uint<8> phiC=0;
+        ap_uint<5> etaC=0;
+        ap_uint<12> etSum=0;
 
         findMaxEnergyTower(HFRegion, etaC, phiC);
 
         if(HFRegion[etaC][phiC].energy > MIN_CLUSTER_SEED_ENERGY)
         {
             formClusterAndZeroOut(HFRegion, etaC, phiC, etSum);
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 7)
+    {
+        for(loop phiI=0; phiI<NTOWER_IN_PHI_PER_SECTOR; phiI++)
+        {
+            std::cout<<std::setw(7)<<phiI;
+        }
+        std::cout<<"  <--Phi"<<"\n";
+        for(loop etaI=0; etaI<NTOWER_IN_ETA_PER_SECTOR; etaI++)
+        {
+            for(loop phiI=0; phiI<NTOWER_IN_PHI_PER_SECTOR; phiI++)
+            {
+                std::cout<<std::setw(5)<< HFRegion[etaI][phiI].energy<<" | ";
+            }
+            std::cout<<"  <--"<<etaI-1<<"\n";
+        }
+        std::cout<<std::endl;
+    }
+#endif
+
 
             if(phiC > 3 && phiC < 8)
             {
             	Clusters_in[cluster].Eta = etaC-1;
-            	Clusters_in[cluster].Phi = phiC;
+            	Clusters_in[cluster].Phi = phiC + sector*4;
             	Clusters_in[cluster].ET = etSum;
-
-            	std::cout << Clusters_in[cluster].ET <<"/n";
 
                 if(etSum == 2*HFRegion[etaC][phiC].energy)
                 {
-                	Clusters_in[cluster].isEG= 1;
-                }
-                else {
-                	Clusters_in[cluster].isEG= 0;
+                	EGClusters_in[cluster].Eta = etaC-1;
+                	EGClusters_in[cluster].Phi = phiC + sector*4;
+                	EGClusters_in[cluster].ET = etSum;
                 }
             }
         }
     }
 
+    sortPFcluster_4(EGClusters_in, EGClusters);
     sortPFcluster_4(Clusters_in, Clusters);
 
 #ifndef __SYNTHESIS__
@@ -409,6 +434,46 @@ void selectEGClusters(const PFcluster caloClusters[N_SECTORS][4] ,l1ct::HadCaloO
     }
 }
 
+
+void pfExy(const l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS],
+		ap_fixed<32,16>& Ex, ap_fixed<32,16>& Ey){
+
+#pragma HLS INLINE off
+
+    ap_fixed<32,16> Ex_temp = 0;
+    ap_fixed<32,16> Ey_temp = 0;
+
+	ap_fixed<32,16> sin_LUT[72] = {0.0436, 0.1305, 0.2164, 0.3007, 0.3827, 0.4617, 0.5373, 0.6088,
+            0.6756, 0.7373, 0.7934, 0.8434, 0.8870, 0.9239, 0.9537, 0.9763,
+            0.9914, 0.9990, 0.9990, 0.9914, 0.9763, 0.9537, 0.9239, 0.8870,
+            0.8434, 0.7934, 0.7373, 0.6756, 0.6088, 0.5373, 0.4617, 0.3827,
+            0.3007, 0.2164, 0.1305, 0.0436, -0.0436, -0.1305, -0.2164, -0.3007,
+            -0.3827, -0.4617, -0.5373, -0.6088, -0.6756, -0.7373, -0.7934, -0.8434,
+            -0.8870, -0.9239, -0.9537, -0.9763, -0.9914, -0.9990, -0.9990, -0.9914,
+            -0.9763, -0.9537, -0.9239, -0.8870, -0.8434, -0.7934, -0.7373, -0.6756,
+            -0.6088, -0.5373, -0.4617, -0.3827, -0.3007, -0.2164, -0.1305, -0.0436};
+
+#pragma HLS ARRAY_PARTITION variable=sin_LUT complete dim=0
+
+    for(int i=0; i < N_SECTORS_PF; i++ ){
+        for(int j =0 ; j< NNEUTRALS ; j++){
+
+//			#pragma HLS RESOURCE variable=pfselne[i][j].hwPt * sin_LUT[(pfselne[i][j].hwPhi + 18) % 72] core=Mul_LUT
+            Ex_temp += pfselne[i][j].hwPt * sin_LUT[(pfselne[i][j].hwPhi + 18)%72];
+
+//			#pragma HLS RESOURCE variable=pfselne[i][j].hwPt * sin_LUT[pfselne[i][j].hwPhi] core=Mul_LUT
+            Ey_temp += pfselne[i][j].hwPt * sin_LUT[pfselne[i][j].hwPhi];
+        }
+    }
+
+//#ifndef __SYNTHESIS__
+//std::cout << "\ntemp Ex: " << Ex_temp << "\nEy: " << Ey_temp << std::endl;
+//#endif
+
+    Ex = Ex_temp;
+    Ey = Ey_temp;
+}
+
 void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 		l1ct::HadCaloObj egClusters[8],
 		l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS],
@@ -444,6 +509,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
 
     PFcluster caloClusters[N_SECTORS][4];
+    PFcluster EGClusters[N_SECTORS][4];
 #pragma HLS ARRAY_PARTITION variable=caloClusters complete dim=0
 
     ap_uint<LINK_WIDTH> linksInSector[N_SECTORS][3] ;
@@ -464,7 +530,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
     doPFClustringChain_3_1:
     for(loop sector=0; sector<N_SECTORS; sector++) {
-		makeCaloClusters(linksInSector[sector], caloClusters[sector]);
+		makeCaloClusters(linksInSector[sector], caloClusters[sector],EGClusters[sector], sector);
     }
     
 #ifndef __SYNTHESIS__
@@ -486,6 +552,21 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
             }
             std::cout<<"\n";
         }
+
+    for(loop sector=0; sector<N_SECTORS_PF; sector++)
+        {
+            std::cout<<"CALOCLUSTER | "<< sector<<"\n";
+            for(int wedge =0 ; wedge<LINKS_PER_REGION ; wedge++)
+            {
+                for(int i =0 ; i <4 ;i++)
+                 {
+                    std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].ET<<","
+                             <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Eta<<","
+                             <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Phi<<"\n";
+                }
+            }
+            std::cout<<"\n";
+        }
     }
 #endif
 
@@ -500,11 +581,14 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     	for(loop wedge=0; wedge<LINKS_PER_REGION; wedge++){
     		for(loop cluster=0; cluster<N_PF_CLUSTERS; cluster++){
     			pfHadronicClusters[sector][wedge*N_PF_CLUSTERS + cluster].hwEta =
-    					caloClusters[sector*N_SECTORS_PF + wedge][cluster].Eta - region[sector].hwEtaCenter;
+    					caloClusters[sector*LINKS_PER_REGION + wedge][cluster].Eta - region[sector].hwEtaCenter;
+
     			pfHadronicClusters[sector][wedge*N_PF_CLUSTERS + cluster].hwPhi =
-    			    					caloClusters[sector*N_SECTORS_PF + wedge][cluster].Phi - region[sector].hwPhiCenter;
+    			    					caloClusters[sector*LINKS_PER_REGION + wedge][cluster].Phi - region[sector].hwPhiCenter;
+
     			pfHadronicClusters[sector][wedge*N_PF_CLUSTERS + cluster].hwPt =
-    			    					caloClusters[sector*N_SECTORS_PF + wedge][cluster].ET;
+    			    					caloClusters[sector*LINKS_PER_REGION + wedge][cluster].ET;
+
     			pfHadronicClusters[sector][wedge*N_PF_CLUSTERS + cluster].hwPt >>= 2;
     		}
     	}
@@ -549,7 +633,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     					right.ET;
     			pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
-    			idx_right = idx_right + 1;
+    			idx_right++;
     			right = caloClusters[(sector*3)+3][idx_right];
     		}
     		else {
@@ -561,15 +645,28 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 						left.ET;
 				pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
-    			idx_left = idx_left + 1;
-    			left = caloClusters[(sector*3)+3][idx_right];
+    			idx_left++;
+    			left = caloClusters[(sector*3)-1][idx_left];
     		}
     	}
 
     }
 
+#ifndef __SYNTHESIS__
+    for(loop sector=0; sector<N_SECTORS_PF; sector++) {
+            std::cout<<"HADCALO | "<< sector<<"\n";
+            for(int cluster =0 ; cluster<16 ; cluster++)
+            {
+				std::cout<<pfHadronicClusters[sector][cluster].hwPt<<","
+						 <<pfHadronicClusters[sector][cluster].hwEta<<","
+						 <<pfHadronicClusters[sector][cluster].hwPhi<<"\n";
+            }
+            std::cout<<"\n";
+        }
+#endif
 
-   selectEGClusters(caloClusters,egCandidates);
+
+   selectEGClusters(EGClusters,egCandidates);
     
 
     doPFClustringChain_5_1:
@@ -583,34 +680,18 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     ap_fixed<32,16> Ex_temp = 0;
     ap_fixed<32,16> Ey_temp = 0;
 
-	ap_fixed<32,16> sin_LUT[72] = {0.0436, 0.1305, 0.2164, 0.3007, 0.3827, 0.4617, 0.5373, 0.6088,
-            0.6756, 0.7373, 0.7934, 0.8434, 0.8870, 0.9239, 0.9537, 0.9763,
-            0.9914, 0.9990, 0.9990, 0.9914, 0.9763, 0.9537, 0.9239, 0.8870,
-            0.8434, 0.7934, 0.7373, 0.6756, 0.6088, 0.5373, 0.4617, 0.3827,
-            0.3007, 0.2164, 0.1305, 0.0436, -0.0436, -0.1305, -0.2164, -0.3007,
-            -0.3827, -0.4617, -0.5373, -0.6088, -0.6756, -0.7373, -0.7934, -0.8434,
-            -0.8870, -0.9239, -0.9537, -0.9763, -0.9914, -0.9990, -0.9990, -0.9914,
-            -0.9763, -0.9537, -0.9239, -0.8870, -0.8434, -0.7934, -0.7373, -0.6756,
-            -0.6088, -0.5373, -0.4617, -0.3827, -0.3007, -0.2164, -0.1305, -0.0436};
-
-#pragma HLS ARRAY_PARTITION variable=sin_LUT complete dim=0
+    pfExy(pfselne, Ex_temp, Ey_temp);
 
 	doPFClustringChain_6_1:
-    for(int i=0;i < 8 ; i++)
-    {
-        egClusters[i]=egCandidates[i];
+    for(int i=0;i < 8 ; i++){
+            egClusters[i]=egCandidates[i];
     }
     
     doPFClustringChain_7_1:
-    for(int i=0; i < N_SECTORS_PF; i++ )
-    {
+    for(int i=0; i < N_SECTORS_PF; i++ ) {
     	doPFClustringChain_7_2:
-        for(int j =0 ; j< NNEUTRALS ; j++)
-        {
+        for(int j =0 ; j< NNEUTRALS ; j++) {
             pfSelectedNutrals[i][j]=pfselne[i][j];
-
-            Ex_temp += pfselne[i][j].hwPt * sin_LUT[(pfselne[i][j].hwPhi + 18)%72];
-            Ey_temp += pfselne[i][j].hwPt * sin_LUT[pfselne[i][j].hwPhi];
         }
     }
 
