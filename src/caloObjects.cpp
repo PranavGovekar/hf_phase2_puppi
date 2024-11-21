@@ -61,9 +61,9 @@ void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
             {
                 std::cout<< "\t [ "<<eta<<","<<phi <<" ] : "<< HFTowers[eta][phi].energy<<" | ";
             }
-            std::cout << endl;
+            std::cout << std::endl;
         }
-        std::cout << endl;
+        std::cout << std::endl;
     }
     if(DEBUG_LEVEL > 2)
     {
@@ -74,9 +74,9 @@ void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
             {
                 std::cout<< "["<<eta<<","<<phi<<"] :" << superTowers[eta][phi].energy;
             }
-            std::cout << endl;
+            std::cout << std::endl;
         }
-        std::cout << endl;
+        std::cout << std::endl;
     }
 
     if(DEBUG_LEVEL > 0)
@@ -86,9 +86,9 @@ void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
             std::cout<<"@@HFSuperTowers | "<<eta<<" | ";
             for(loop phi=0; phi<(TOWERS_IN_PHI/3) + 2; phi++)
             {
-                std::cout<<setw(3)<<superTowers[eta][phi].energy<<" |";
+                std::cout<<std::setw(3)<<superTowers[eta][phi].energy<<" |";
             }
-            std::cout << endl;
+            std::cout << std::endl;
         }
     }
 #endif
@@ -246,13 +246,13 @@ void selectTaus(const jets Jet[9], jets Taus[9])
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 2)
     {
-        std::cout<< "Taus : " << endl;
+        std::cout<< "Taus : " << std::endl;
         for(loop cluster=0; cluster<9; cluster++)
         {
             std::cout<<"Tau " << cluster << " E = "<< Taus[cluster].ET << " Seed = " << Taus[cluster].seedET
                      <<", center = ("<< Taus[cluster].Eta <<","<< Taus[cluster].Phi << ")\n";
         }
-        std::cout<<endl;
+        std::cout<<std::endl;
     }
 #endif
 
@@ -301,13 +301,13 @@ void makeJets(hftower superTowers[(TOWERS_IN_ETA/3)+2][(TOWERS_IN_PHI/3)+2],jets
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 2)
     {
-        std::cout<< "Jets : " << endl;
+        std::cout<< "Jets : " << std::endl;
         for(loop cluster=0; cluster<9; cluster++)
         {
             std::cout<<"Jet " << cluster << " E = "<< Jet[cluster].ET << " Seed = " << Jet[cluster].seedET
                      <<", center = ("<< Jet[cluster].Eta <<","<< Jet[cluster].Phi << ")\n";
         }
-        std::cout<<endl;
+        std::cout<<std::endl;
     }
 #endif
 }

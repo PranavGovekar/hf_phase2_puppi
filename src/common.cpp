@@ -54,9 +54,9 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
             {
                 std::cout<< "\t" << towerGrid[eta][phi].energy;
             }
-            std::cout << endl;
+            std::cout << std::endl;
         }
-        std::cout << endl;
+        std::cout << std::endl;
     }
 #endif
 }
@@ -65,12 +65,30 @@ hftower  bestOf2(const hftower& ecaltp0, const hftower& ecaltp1) {
 #pragma HLS INLINE off
 #pragma HLS latency min=1
 
-hftower x;
-x = (ecaltp0.energy > ecaltp1.energy)?ecaltp0:ecaltp1;
-return x;
-
+	hftower x;
+	x = (ecaltp0.energy > ecaltp1.energy)?ecaltp0:ecaltp1;
+	return x;
 }
 
+PFcluster  bestOf2(const PFcluster& ecaltp0, const PFcluster& ecaltp1) {
+#pragma HLS INLINE off
+#pragma HLS latency min=1
+
+	PFcluster x;
+	x = (ecaltp0.ET > ecaltp1.ET)?ecaltp0:ecaltp1;
+	return x;
+}
+
+
+GreaterSmaller AscendDescend(const PFcluster &x, const PFcluster &y)
+{
+    GreaterSmaller s;
+
+    s.greater = (x.ET > y.ET) ? x : y;
+    s.smaller = (x.ET > y.ET) ? y : x;
+
+    return s;
+}
 
 template <int SIZE, int N_POWER_2>
 void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center)

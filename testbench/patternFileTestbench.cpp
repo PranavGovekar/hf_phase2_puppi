@@ -78,9 +78,9 @@ int main() {
     			ap_uint<10> start =j*10;
     			ap_uint<10> end = start+9;
     			HFTowers.fillhftower(((ap_uint<10>) link_out[i].range(end, start))) ;
-    			cout << "  > tower  [ "
+    			std::cout << "  > tower  [ "
     			 << " phi slice : " << i<<" | "<< " eta slice : "<<j<<" ] "
-			 <<" energy  :" <<  HFTowers.energy<< endl ;
+			 <<" energy  :" <<  HFTowers.energy<< std::endl ;
         	break;
 		}
         	break;

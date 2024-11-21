@@ -93,9 +93,9 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
                 std::cout<<"@@HFTowers | "<<link<<","<<phi<<" | ";
                 for(loop eta=0; eta<TOWERS_IN_ETA; eta++)
                 {
-                    std::cout<<setw(3)<<towerGrid[eta][phi].energy<<" | ";
+                    std::cout<<std::setw(3)<<towerGrid[eta][phi].energy<<" | ";
                 }
-                std::cout << endl;
+                std::cout << std::endl;
             }
         }
     }

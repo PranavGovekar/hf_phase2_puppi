@@ -2,7 +2,6 @@
 #define COMMON_H
 
 #include "ap_int.h"
-#include "bitonicSort16.h"
 #include "pfCluster.h"
 #include "hfTowers.h"
 
@@ -33,6 +32,11 @@
 #define LINKS_PER_REGION ((N_INPUT_LINKS/N_SECTORS) + 2)
 #define N_SORT_ELEMENTS 16
 
+class GreaterSmaller
+{
+public:
+	PFcluster greater, smaller;
+};
 
 typedef ap_uint<10> loop;
 
@@ -43,6 +47,8 @@ template <int SIZE, int N_POWER_2>
 void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center);
 
 hftower bestOf2(const hftower& ecaltp0, const hftower& ecaltp1);
+PFcluster  bestOf2(const PFcluster& ecaltp0, const PFcluster& ecaltp1);
 
+GreaterSmaller AscendDescend(const PFcluster &x, const PFcluster &y);
 
 #endif
