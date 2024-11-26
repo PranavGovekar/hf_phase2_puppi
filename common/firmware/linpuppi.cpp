@@ -362,7 +362,7 @@ void fwdlinpuppi(const PFRegion & region, const HadCaloObj caloin[NCALO], PuppiO
  #elif HLS_pipeline_II == 2
     #pragma HLS pipeline II=2
  #elif HLS_pipeline_II == 3
-    #pragma HLS pipeline II=3
+    #pragma HLS PIPELINE
  #elif HLS_pipeline_II == 4
     #pragma HLS pipeline II=4
  #elif HLS_pipeline_II == 6

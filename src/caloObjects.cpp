@@ -9,15 +9,15 @@ void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
     hftower HFTowers[TOWERS_IN_ETA][TOWERS_IN_PHI];
 
-    #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
+//    #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+//    #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
 
     unpackToSuperTowers_1_1:
     for(loop link=0; link<N_INPUT_LINKS; link++)
     {
 
         hftower HFTowers_temp[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
-        #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
+//        #pragma HLS ARRAY_PARTITION variable=HFTowers complete dim=0
         processInputLink(link_in[link], HFTowers_temp);
 
         unpackToSuperTowers_1_2:
@@ -369,7 +369,7 @@ void makeCaloObjects(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 //    #pragma HLS PIPELINE II=9
 
 	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+//#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
 	makeCaloObjects_1_1:
 	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
 		__link_in[link] = link_in[link];
