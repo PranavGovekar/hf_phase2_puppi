@@ -4,6 +4,7 @@
 #include "ap_int.h"
 #include "pfCluster.h"
 #include "hfTowers.h"
+#include "jets.h"
 
 
 #define TOWERS_IN_ETA 12
@@ -38,6 +39,12 @@ public:
 	PFcluster greater, smaller;
 };
 
+class jetGreaterSmaller
+{
+public:
+	jets greater, smaller;
+};
+
 typedef ap_uint<10> loop;
 
 void processInputLink(ap_uint<LINK_WIDTH> link_in,
@@ -50,5 +57,6 @@ hftower bestOf2(const hftower& ecaltp0, const hftower& ecaltp1);
 PFcluster  bestOf2(const PFcluster& ecaltp0, const PFcluster& ecaltp1);
 
 GreaterSmaller AscendDescend(const PFcluster &x, const PFcluster &y);
+jetGreaterSmaller AscendDescend(const jets &x, const jets &y);
 
 #endif

@@ -90,6 +90,16 @@ GreaterSmaller AscendDescend(const PFcluster &x, const PFcluster &y)
     return s;
 }
 
+jetGreaterSmaller AscendDescend(const jets &x, const jets &y)
+{
+	jetGreaterSmaller s;
+
+    s.greater = (x.ET > y.ET) ? x : y;
+    s.smaller = (x.ET > y.ET) ? y : x;
+
+    return s;
+}
+
 template <int SIZE, int N_POWER_2>
 void findMaxEnergyTowerInArray(const hftower Towers[SIZE], ap_uint<10>& center)
 {
