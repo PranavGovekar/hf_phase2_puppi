@@ -53,12 +53,12 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 {
 
     #pragma HLS PIPELINE II=9
-    #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
+    #pragma HLS ARRAY_PARTITION variable=link_in type=complete
+    #pragma HLS ARRAY_PARTITION variable=link_out type=complete
     #pragma HLS INTERFACE ap_ctrl_hs port=return
 
 	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+#pragma HLS ARRAY_PARTITION variable=__link_in type=complete
 	algo_topIP1_1_1:
 	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
 		__link_in[link] = link_in[link];
@@ -67,8 +67,8 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 
     jets Jets[9];
     jets Taus[9];
-    #pragma HLS ARRAY_PARTITION variable=Jets complete dim=0
-    #pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
+    #pragma HLS ARRAY_PARTITION variable=Jets type=complete
+    #pragma HLS ARRAY_PARTITION variable=Taus type=complete
 
 
 #ifndef __SYNTHESIS__
@@ -127,7 +127,10 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
 #endif
 
     l1ct::HadCaloObj egClusters[8]; // TODO . rmove hardcoding
+#pragma HLS ARRAY_PARTITION variable=egClusters type=complete
     l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS];
+#pragma HLS ARRAY_PARTITION variable=pfSelectedNutrals type=complete
+
     ap_fixed<32,16> Ex_pu;
 	ap_fixed<32,16> Ey_pu;
     
