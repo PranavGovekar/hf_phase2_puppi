@@ -10,7 +10,11 @@ cd hf_phase2_puppi
 git checkout clusterizer
 source /opt/Xilinx/Vivado/2022.1/settings64.sh
 ./run.sh -build
+./run.sh -gui
 ```
+Once Vitis HLS is launched:
+- Click on Open Project.
+- Then, click on Open. (current working directory is already set correctly)
 ---
 ## Usage
 ```bash
