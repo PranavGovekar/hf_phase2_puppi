@@ -8,6 +8,7 @@ To build the project
 git clone https://gitlab.cern.ch/pgovekar/hf_phase2_puppi.git
 cd hf_phase2_puppi
 git checkout clusterizer
+source /opt/Xilinx/Vivado/2022.1/settings64.sh
 ./run.sh -build
 ```
 ---
@@ -29,6 +30,8 @@ git checkout clusterizer
 | `-implrp`   | View implementation report.          |
 | `-axis`     | Build an AXI Stream (AXIS) wrapper.  |
 | `-zcu`      | Build an AXI Memory Mapped (AXIMM) wrapper. |
+| `-gui`      | Launch Vitis HLS project.	     |
+| `-gui_vivado`| Launch vivado project.              |
 
 ### Helper Scripts
 

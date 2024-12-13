@@ -65,7 +65,7 @@ while [[ $# -gt 0 ]]; do
             ;;
          -impl)
             echo "Running Implementation ...."
-            source /home/bitsmith/Xilinx/Vivado/2023.1/settings64.sh
+            #source /home/bitsmith/Xilinx/Vivado/2023.1/settings64.sh
             date
             start=`date +%s`
             vitis_hls -f scripts/run_impl.tcl 
@@ -113,7 +113,23 @@ while [[ $# -gt 0 ]]; do
         -implrp)
             echo "Implementation Report"
             date
-            cat project/HF_PUPPI/csim_solution/impl/report/verilog/algo_topIP1_export.rpt
+            cat project/HF_PUPPI/csim_solution/impl/report/vhdl/algo_topIP1_export.rpt
+            flag_provided=true
+            ;;
+	-gui)
+            echo "Launching Vitis HLS"
+            date
+            cd project/HF_PUPPI/
+	    vitis_hls
+	    cd ../..
+            flag_provided=true
+            ;;
+	-gui_vivado)
+            echo "Launching Vivado"
+            date
+            cat project/HF_PUPPI/csim_solution/impl/vhdl
+	    vivado project.xpr
+	    cd ../../../../../
             flag_provided=true
             ;;
         *)

@@ -6,14 +6,12 @@ cd project
 open_project HF_PUPPI
 
 set_top algo_topIP1
-add_files ${TOPDIR}/src/bitonicSort16.cpp -cflags "-I${TOPDIR}/src"
 add_files ${TOPDIR}/src/common.cpp -cflags "-I${TOPDIR}/src -I${TOPDIR}/common "
 add_files ${TOPDIR}/src/caloObjects.cpp -cflags "-I${TOPDIR}/src -I${TOPDIR}/common "
 add_files ${TOPDIR}/src/pfClusterering.cpp -cflags "-I${TOPDIR}/src -I${TOPDIR}/common "
 add_files ${TOPDIR}/src/caloObjects.cpp -cflags "-I${TOPDIR}/src -I${TOPDIR}/common "
 add_files ${TOPDIR}/src/algo_topIP1.h -cflags "-I${TOPDIR}/src -I${TOPDIR}/common"
 add_files ${TOPDIR}/src/algo_top_IP.cpp -cflags "-I${TOPDIR}/src -I${TOPDIR}/common"
-add_files ${TOPDIR}/src/bitonicSort16.h
 add_files ${TOPDIR}/src/pfCluster.h
 add_files ${TOPDIR}/common/firmware/linpuppi.h -cflags "-I${TOPDIR}/common"
 add_files ${TOPDIR}/common/firmware/linpuppi.cpp -cflags "-I${TOPDIR}/common"

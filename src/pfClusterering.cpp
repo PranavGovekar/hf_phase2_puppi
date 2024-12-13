@@ -6,8 +6,8 @@ void makeRegion(const ap_uint<LINK_WIDTH> link_in[LINKS_PER_REGION],
                 hftower HFRegions[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR])
 {
 
-    // #pragma HLS ARRAY_PARTITION variable=link_in type=complete
-     #pragma HLS ARRAY_PARTITION variable=HFRegions type=complete
+//     #pragma HLS ARRAY_PARTITION variable=link_in type=complete
+     #pragma HLS ARRAY_PARTITION variable=HFRegions type=complete dim=0
 
 	makeRegion_1_1:
     for(loop link=0; link<LINKS_PER_REGION; link++)
@@ -103,8 +103,8 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
                         ap_uint<5>& etaC,
                         ap_uint<8>& phiC)
 {
-#pragma HLS PIPELINE
-    // #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete
+//#pragma HLS PIPELINE
+// 	 #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete
 
 	hftower towersEta[12];
 // #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
@@ -140,6 +140,7 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
                            ap_uint<8> phiC,
                            ap_uint<12>& etSum) {
 
+//#pragma HLS ARRAY_PARTITION variable=HFRegion type=complete
 	ap_uint<12> etSum__ = 0;
 
     ap_uint<1> mask[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR];
@@ -248,7 +249,7 @@ void findMaxEnergyPFcluster_32(const PFcluster Clusters[18], ap_uint<5>& maxIdx)
 		PFcluster tempArray[32];
 		ap_uint<6> index[32];
 
-	    // #pragma HLS ARRAY_PARTITION variable=Clusters type=complete
+	     #pragma HLS ARRAY_PARTITION variable=Clusters type=complete
 	     #pragma HLS ARRAY_PARTITION variable=tempArray type=complete
 		// #pragma HLS ARRAY_PARTITION variable=index type=complete
 
@@ -286,12 +287,12 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
 		PFcluster EGClusters[N_PF_CLUSTERS],
 		const ap_uint<10> sector)
 {
-	// #pragma HLS ARRAY_PARTITION variable=regionLinks type=complete
+//	 #pragma HLS ARRAY_PARTITION variable=regionLinks type=complete
     // #pragma HLS ARRAY_PARTITION variable=Clusters type=complete
 	// #pragma HLS ARRAY_PARTITION variable=EGClusters type=complete
 
     hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR];
-    // #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete
+//     #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete
 
     PFcluster Clusters_in [N_PF_CLUSTERS+2];
 	// #pragma HLS ARRAY_PARTITION variable=Clusters_in type=complete
@@ -437,11 +438,11 @@ void findMaxEnergyPFCluster(const ap_uint<12> EtaTowers[72], ap_uint<8>& etaC)
 
 void selectEGClusters(const PFcluster caloClusters[N_SECTORS][4] ,l1ct::HadCaloObj egClusters[9] )
 {
-// #pragma HLS ARRAY_PARTITION variable=caloClusters type=complete
-// #pragma HLS ARRAY_PARTITION variable=egClusters type=complete
+ #pragma HLS ARRAY_PARTITION variable=caloClusters type=complete dim=0
+ #pragma HLS ARRAY_PARTITION variable=egClusters type=complete
     PFcluster  egCandidateClusters[N_SECTORS];
     ap_uint<3> cluaterIdx[N_SECTORS];
- #pragma HLS ARRAY_PARTITION variable=egCandidateClusters type=complete
+// #pragma HLS ARRAY_PARTITION variable=egCandidateClusters type=complete
  #pragma HLS ARRAY_PARTITION variable=cluaterIdx type=complete
     
     for(int sector=0 ; sector < N_SECTORS ; sector++){
@@ -544,8 +545,8 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
     PFcluster caloClusters[N_SECTORS][4];
     PFcluster EGClusters[N_SECTORS][4];
- #pragma HLS ARRAY_PARTITION variable=caloClusters type=complete
- #pragma HLS ARRAY_PARTITION variable=EGClusters type=complete
+// #pragma HLS ARRAY_PARTITION variable=caloClusters type=complete
+// #pragma HLS ARRAY_PARTITION variable=EGClusters type=complete dim=0
 
     ap_uint<LINK_WIDTH> linksInSector[N_SECTORS][3] ;
 // #pragma HLS ARRAY_PARTITION variable=linksInSector type=complete
@@ -607,12 +608,12 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 #endif
 
     l1ct::HadCaloObj egCandidates[9];
- #pragma HLS ARRAY_PARTITION variable=egCandidates type=complete
+// #pragma HLS ARRAY_PARTITION variable=egCandidates type=complete
 
     l1ct::PuppiObj pfselne[N_SECTORS_PF][NNEUTRALS];
     l1ct::HadCaloObj pfHadronicClusters[N_SECTORS_PF][NCALO];
- #pragma HLS ARRAY_PARTITION variable=pfselne type=complete
- #pragma HLS ARRAY_PARTITION variable=pfHadronicClusters type=complete
+ #pragma HLS ARRAY_PARTITION variable=pfselne type=complete dim=0
+ #pragma HLS ARRAY_PARTITION variable=pfHadronicClusters type=complete dim=0
 
     for(loop sector=0; sector<N_SECTORS_PF; sector++){
     	for(loop wedge=0; wedge<LINKS_PER_REGION; wedge++){
