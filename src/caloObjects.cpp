@@ -6,19 +6,18 @@
 void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[11],
                          hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2])
 {
-
-    hftower HFTowers[TOWERS_IN_ETA][11*4];
-
 	 #pragma HLS ARRAY_PARTITION variable=superTowers type=complete dim=0
-//     #pragma HLS ARRAY_PARTITION variable=link_in type=complete
-//     #pragma HLS ARRAY_PARTITION variable=HFTowers type=complete
+     #pragma HLS ARRAY_PARTITION variable=link_in type=complete
+
+	hftower HFTowers[TOWERS_IN_ETA][11*4];
+     #pragma HLS ARRAY_PARTITION variable=HFTowers type=complete dim=0
 
     unpackToSuperTowers_1_1:
     for(loop link=0; link<11; link++)
     {
 
         hftower HFTowers_temp[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
-//        #pragma HLS ARRAY_PARTITION variable=HFTowers_temp type=complete
+        #pragma HLS ARRAY_PARTITION variable=HFTowers_temp type=complete dim=0
         processInputLink(link_in[link], HFTowers_temp);
 
         unpackToSuperTowers_1_2:
@@ -98,7 +97,7 @@ void findMaxEnergySuperTowerInPhi(const hftower PhiTowers[24],
 							hftower& phiC) {
 #pragma HLS INLINE off
     hftower tempArray[32];
-    // #pragma HLS ARRAY_PARTITION variable=tempArray type=complete
+     #pragma HLS ARRAY_PARTITION variable=tempArray type=complete
 
     findMaxEnergySuperTowerInPhi_1_1:
     for(loop i=0; i<24; i++){
@@ -122,7 +121,7 @@ void findMaxEnergySuperTowerInPhi(const hftower PhiTowers[24],
 void findMaxEnergySuperTowerInEta(const hftower EtaTowers[4], hftower& etaC) {
 #pragma HLS INLINE off
     hftower tempArray[4];
-    // #pragma HLS ARRAY_PARTITION variable=tempArray type=complete
+     #pragma HLS ARRAY_PARTITION variable=tempArray type=complete
 
     findMaxEnergySuperTowerInEta_1_1:
     for(loop i=0; i<4; i++) {
@@ -151,13 +150,13 @@ void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][((TOWER
      #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete dim=0
 
 	hftower towersPhi[24];
-//     #pragma HLS ARRAY_PARTITION variable=towersPhi type=complete
+     #pragma HLS ARRAY_PARTITION variable=towersPhi type=complete
 	hftower tempPhi;
 	findMaxEnergySuperTower_1_1:
     for(ap_uint<5> phi = 1; phi < 13; phi++)
     {
     	hftower towersEta[4];
-//         #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
+         #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
     	findMaxEnergySuperTower_1_2:
         for(loop eta = 1; eta < 5; eta++)
         {
@@ -186,7 +185,10 @@ void formJetsAndZeroOut(hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI
 #pragma HLS ARRAY_PARTITION variable=superTowers type=complete dim=0
 
     ap_uint<1> mask[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2];
+#pragma HLS ARRAY_PARTITION variable=mask type=complete dim=0
     ap_uint<1> zero[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2];
+#pragma HLS ARRAY_PARTITION variable=zero type=complete dim=0
+
 
     for (ap_uint<10> eta = 0; eta < (TOWERS_IN_ETA/3)+2; eta++) {
     	for (ap_uint<10> phi = 0; phi < ((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2; phi++) {
@@ -235,18 +237,15 @@ void formJetsAndZeroOut(hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI
 void selectTaus(const jets Jet[9], jets Taus[9])
 {
 #pragma HLS INLINE off
-// #pragma HLS ARRAY_PARTITION variable=Jet type=complete
-// #pragma HLS ARRAY_PARTITION variable=Taus type=complete
+ #pragma HLS ARRAY_PARTITION variable=Jet type=complete
+ #pragma HLS ARRAY_PARTITION variable=Taus type=complete
 
-    int count = 0;
     selectTaus_1_1:
     for(loop idx = 0; idx < 9; idx++)
     {
-        // todo : fix to multiplication
         if((Jet[idx].seedET * 10) >= (Jet[idx].ET * 7))
         {
-            Taus[count] = Jet[idx];
-            count++;
+            Taus[idx] = Jet[idx];
         }
     }
 
@@ -270,11 +269,11 @@ void makeJets(const ap_uint<LINK_WIDTH> link_in[11],
 		jets Jet[5])
 {
 #pragma HLS INLINE off
-// #pragma HLS ARRAY_PARTITION variable=link_in type=complete
-// #pragma HLS ARRAY_PARTITION variable=Jet type=complete
+ #pragma HLS ARRAY_PARTITION variable=link_in type=complete
+ #pragma HLS ARRAY_PARTITION variable=Jet type=complete
 
 	hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2];
-// #pragma HLS ARRAY_PARTITION variable=superTowers type=complete
+ #pragma HLS ARRAY_PARTITION variable=superTowers type=complete dim=0
 
 	unpackToSuperTowers(link_in, superTowers);
 
@@ -325,35 +324,27 @@ void Exy(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     ap_fixed<32,16> Ex_temp = 0;
     ap_fixed<32,16> Ey_temp = 0;
 
-    ap_uint<9> A_Energy;
-    ap_uint<9> B_Energy;
-    ap_uint<9> __A_Energy;
-	ap_uint<9> __B_Energy;
-
-	ap_uint<8> A10;
-	ap_uint<8> B10;
-
     Exy_1_1:
     for(loop j = 0; j < TOWERS_IN_PHI/2; j=j+2) {
     	Exy_1_2:
         for(loop i = 0; i < TOWERS_IN_ETA - 2; i++) {
 
-            A_Energy = link_in[j/2].range(i*10 + 7, i*10);
-            B_Energy = link_in[j/2].range(i*10 + 117, i*10 + 110);
+            ap_uint<9> A_Energy = link_in[j/2].range(i*10 + 7, i*10);
+            ap_uint<9> B_Energy = link_in[j/2].range(i*10 + 117, i*10 + 110);
 
-			__A_Energy = A_Energy << 1;
-			__B_Energy = B_Energy << 1;
+            A_Energy = A_Energy << 1;
+            B_Energy = B_Energy << 1;
 
-            Ey_temp += __A_Energy * sin_LUT[j];
-            Ex_temp += __A_Energy * sin_LUT[(j + 9) % 36];
+            Ey_temp += A_Energy * sin_LUT[j];
+            Ex_temp += A_Energy * sin_LUT[(j + 9) % 36];
 
-            Ey_temp += __B_Energy * sin_LUT[j+1];
-            Ex_temp += __B_Energy * sin_LUT[(j+10) % 36];
+            Ey_temp += B_Energy * sin_LUT[j+1];
+            Ex_temp += B_Energy * sin_LUT[(j+10) % 36];
 
         }
 
-        A10 = link_in[j/2].range(107, 100);
-        B10 = link_in[j/2].range(217, 210);
+        ap_uint<8> A10 = link_in[j/2].range(107, 100);
+        ap_uint<8> B10 = link_in[j/2].range(217, 210);
 
         Ey_temp += (A10 * sin_LUT[j])*2;
         Ex_temp += (A10 * sin_LUT[(j+9) % 36])*2;
@@ -372,8 +363,10 @@ void Exy(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     #endif
 }
 
+
 void swap_1(const jets Jets_in[10], jets Jets_out[10]) {
 #pragma HLS INLINE off
+#pragma HLS PIPELINE
 	jetGreaterSmaller res;
 
     res = AscendDescend(Jets_in[0], Jets_in[1]);
@@ -424,7 +417,11 @@ void swap_2(const jets Jets_in[10], jets Jets_out[10]) {
 void sortJets(const jets Jets_in[N_SECTORS_ST][5], jets Jets_out[9]) {
 #pragma HLS INLINE off
 
+#pragma HLS ARRAY_PARTITION variable=Jets_in type=complete dim=0
+#pragma HLS ARRAY_PARTITION variable=Jets_out type=complete
+
 	jets __Jets_in[10];
+#pragma HLS ARRAY_PARTITION variable=__Jets_in type=complete
 
 	for(int sector = 0 ; sector < N_SECTORS_ST; sector++){
 		for(int jet = 0 ; jet < 5; jet++){
@@ -456,17 +453,16 @@ void sortJets(const jets Jets_in[N_SECTORS_ST][5], jets Jets_out[9]) {
 void makeCaloObjects(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
                      jets Jets[9], jets Taus[9], ap_fixed<32,16>& Ex, ap_fixed<32,16>& Ey, ap_uint<12>& HT)
 {
-// #pragma HLS ARRAY_PARTITION variable=link_in type=complete
-//    #pragma HLS PIPELINE II=9
+ #pragma HLS ARRAY_PARTITION variable=link_in type=complete
 
 	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
-// #pragma HLS ARRAY_PARTITION variable=__link_in type=complete
+ #pragma HLS ARRAY_PARTITION variable=__link_in type=complete
 	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
 		__link_in[link] = link_in[link];
 	}
 
 	ap_uint<LINK_WIDTH> linksInSector[N_SECTORS_ST][11];
-// #pragma HLS ARRAY_PARTITION variable=linksInSector
+ #pragma HLS ARRAY_PARTITION variable=linksInSector type=complete dim=0
 	for(int sector = 0 ; sector < N_SECTORS_ST; sector++){
 		for(int link = 0 ; link < N_INPUT_LINKS/N_SECTORS_ST; link++){
 			linksInSector[sector][link+1] = link_in[9*sector + link];
