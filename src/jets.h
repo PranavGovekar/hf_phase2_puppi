@@ -20,7 +20,7 @@ public:
     }
     ap_uint<64> data()
     {
-        ap_uint<64> out = ET | ((ap_uint<64>)Eta << 12) | ((ap_uint<64>)Phi << 15) | ((ap_uint<64>)seedET << 27) ;
+        ap_uint<64> out = ET | ((ap_uint<64>)Eta << 12) | ((ap_uint<64>)Phi << 15) | ((ap_uint<64>)seedET << 22) ;
         return out ;
     }
 

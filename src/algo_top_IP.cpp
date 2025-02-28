@@ -5,7 +5,7 @@ void packPuppi(	l1ct::PuppiObj pfselne[NNEUTRALS],
 #pragma HLS INLINE
 	const ap_uint<8> BW = 64;
 	ap_uint<12> start = 0;
-	ap_uint<576> temp_link;
+	ap_uint<576> temp_link = 0;
 
 	packPuppi_1_1:
     for(loop idx=0; idx<NNEUTRALS; idx++) {
@@ -21,7 +21,7 @@ void packEG(l1ct::HadCaloObj pfselne[NNEUTRALS],
 			ap_uint<576> &link_out){
 	const ap_uint<8> BW = 64;
 	ap_uint<12> start = 0;
-	ap_uint<576> temp_link;
+	ap_uint<576> temp_link = 0;
 
 	packEG_1_1:
     for(loop idx=0; idx<NNEUTRALS; idx++) {
@@ -36,11 +36,23 @@ void packEG(l1ct::HadCaloObj pfselne[NNEUTRALS],
 void packJets(jets Jets[9], ap_uint<576> &link_out){
 	const ap_uint<8> BW = 64;
 	ap_uint<12> start = 0;
-	ap_uint<576> temp_link;
+	ap_uint<576> temp_link=0;
 
 	packJets_1_1:
-    for(loop idx=0; idx<6; idx++) {
-    	temp_link.range(start+(BW-1),start) = Jets[idx].data();
+    for(loop idx=0; idx<9; idx++) {
+//    	std::cout << "JET ET : " << Jets[idx].ET << " Eta : " << Jets[idx].Eta << " Phi : " << Jets[idx].Phi << " Seed : "
+//    			<< Jets[idx].seedET << std::endl << Jets[idx].data() << std::endl;
+//
+//    	ap_uint<64> temp = Jets[idx].data();
+//    	for(loop j = 0; j < 64; j++){
+//    		std::cout << (temp[j]);
+//    	}
+//    	std::cout << std::endl;
+
+    	temp_link.range(start+(11),start) = Jets[idx].ET;
+    	temp_link.range(start+(14),start+12) = Jets[idx].Eta;
+    	temp_link.range(start+(21),start+15) = Jets[idx].Phi;
+    	temp_link.range(start+(35),start+22) = Jets[idx].seedET;
 
         start = start + BW;
     }
@@ -166,6 +178,22 @@ void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_o
         }
     }
 #endif
+
+//
+//    std::cout << std::endl;
+//    for(loop i = 0; i < 10; i++){
+//    	std::cout << std::hex << (link_out[i]) << std::dec << std::endl;
+//    }
+//    std::cout << std::endl;
+//
+//
+//    for(loop i = 0; i < 10; i++){
+//    	for(loop j = 0; j < 576; j++){
+//    		std::cout << (link_out[i][j]);
+//    	}
+//    	std::cout << std::endl;
+//    }
+//    std::cout << std::endl;
 
 
     algo_topIP1_2_1:

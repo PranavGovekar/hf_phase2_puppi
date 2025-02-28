@@ -582,7 +582,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
                     std::cout<<caloClusters[sector*LINKS_PER_REGION+wedge][i].ET<<","
                              <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Eta<<","
                              <<caloClusters[sector*LINKS_PER_REGION+wedge][i].Phi<<"\n";
-                }
+                 }
             }
             std::cout<<"\n";
         }
@@ -615,10 +615,14 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     }
 
 
+    ap_uint<8> left_i[6] = {17,2,5,8,11,14};
+    ap_uint<8> right_i[6] = {3,6,9,12,15,0};
+
+
     for(loop sector=0; sector<N_SECTORS_PF; sector++){
 
-    	int phi_offset_l;
-    	int phi_offset_r;
+    	ap_uint<8> phi_offset_l;
+    	ap_uint<8> phi_offset_r;
 
     	if(sector == 0){
     		phi_offset_l = -72;
@@ -637,11 +641,11 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     	PFcluster left;
     	PFcluster right;
 
-    	int idx_left = 0;
-    	int idx_right = 0;
+    	ap_uint<8> idx_left = 0;
+    	ap_uint<8> idx_right = 0;
 
-    	left = caloClusters[(sector*3)-1][idx_left];
-    	right = caloClusters[(sector*3)+3][idx_right];
+    	left = caloClusters[left_i[sector]][idx_left];
+    	right = caloClusters[right_i[sector]][idx_right];
 
     	for(loop idx=0; idx<4; idx++) {
     		if(left.ET < right.ET){
@@ -654,7 +658,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     			pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
     			idx_right++;
-    			right = caloClusters[(sector*3)+3][idx_right];
+    			right = caloClusters[right_i[sector]][idx_right];
     		}
     		else {
     			pfHadronicClusters[sector][12+idx].hwEta =
@@ -666,7 +670,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 				pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
     			idx_left++;
-    			left = caloClusters[(sector*3)-1][idx_left];
+    			left = caloClusters[left_i[sector]][idx_left];
     		}
     	}
 
