@@ -1,224 +1,223 @@
 #include "algo_topIP1.h"
 
-void Regionizer(const ap_uint<576> link_center,
-			const ap_uint<576> link_left,
-			const ap_uint<576> link_right,
-			const ap_uint<3> sector,
-			l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	#pragma HLS PIPELINE
-
-	l1ct::PFRegion region;
-    region.hwEtaCenter = l1ct::glbeta_t(12);
-    region.hwEtaHalfWidth = l1ct::eta_t(12);
-    region.hwEtaExtra = l1ct::eta_t(0);
-    region.hwPhiExtra = l1ct::phi_t(2);
-    region.hwPhiHalfWidth = l1ct::phi_t(6);
-    region.hwPhiCenter = l1ct::glbphi_t((12*sector)+5);
-
-	fillCenterLink(link_center, region, puppiIn);
-	fillExtra(link_left, link_right, region, sector, puppiIn);
-
-#ifndef __SYNTHESIS__
-	for( loop j=0 ;j < NCALO ; j++){
-		std::cout<<"HCALOobj "<<" , "<<j
-		  <<" : phi "<<puppiIn[j].hwPhi
-		  <<" : eta "<<puppiIn[j].hwEta
-		  <<" : et  "<<puppiIn[j].hwPt
-		  <<"\n";
-	}
-#endif
-
-}
-
-
-void pack(	l1ct::PuppiObj pfselne[NNEUTRALS],
-			ap_uint<576> &link_out
-			){
+void packPuppi(	l1ct::PuppiObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out){
+#pragma HLS INLINE
 	const ap_uint<8> BW = 64;
 	ap_uint<12> start = 0;
 	ap_uint<576> temp_link;
 
+	packPuppi_1_1:
     for(loop idx=0; idx<NNEUTRALS; idx++) {
     	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
 
         start = start + BW;
     }
 
+    temp_link.range(575, 512) = 0;
     link_out = temp_link;
 }
 
-void fillCenterLink(const ap_uint<576> &link,
-					const l1ct::PFRegion &region,
-					l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	ap_uint<576> word = link;
-	const int eta_offset = region.hwEtaCenter;
-	const int phi_offset = region.hwPhiCenter;
+void sendOut(ap_uint<576> temp_link[10], ap_uint<576> link_out[10]){
+#pragma HLS INLINE off
 
-	for(loop j=0; j<N_PF_LINK; j++) {
-		puppiIn[j].hwPt = word.range(11,0);
-		puppiIn[j].hwEta = (word.range(16,12) - eta_offset);
-		puppiIn[j].hwPhi = (word.range(24,17) - phi_offset);
-		word=word>>64;
-
+	for(loop idx=0; idx<10; idx++) {
+		link_out[idx] = temp_link[idx];
 	}
-}
-
-void fillExtra(	const ap_uint<576> &link_left,
-				const ap_uint<576> &link_right,
-				const l1ct::PFRegion &region,
-				const ap_uint<3> N_REGION,
-				l1ct::HadCaloObj puppiIn[NCALO]
-				){
-	ap_uint<3> region_l;
-	ap_uint<3> region_r;
-	if (N_REGION==0){
-		region_l = 5;
-	}
-	else {
-		region_l = N_REGION-1;
-	}
-	if (N_REGION==5){
-		region_r = 0;
-	}
-	else {
-		region_r = N_REGION+1;
-	}
-
-	int phi_offset_l = 12*N_REGION + 5;
-	int phi_offset_r = 12*N_REGION + 5;
-
-	if (  N_REGION == 0              and    region_l == (5)) phi_offset_l+=72;
-	if (  N_REGION == (5)  and    region_r == 0                ) phi_offset_r-=72;
-
-	l1ct::HadCaloObj leftStream[N_EXTRA];
-	l1ct::HadCaloObj rightStream[N_EXTRA];
-
-	for(loop idx=0; idx<N_EXTRA; idx++) {
-		leftStream[idx].clear();
-		rightStream[idx].clear();
-	}
-
-	getInside(link_left, phi_offset_l, region, leftStream);
-	getInside(link_right, phi_offset_r, region, rightStream);
-
-	mergeSort(leftStream, rightStream, puppiIn);
 
 }
 
-void mergeSort(	l1ct::HadCaloObj leftStream[N_EXTRA],
-				l1ct::HadCaloObj rightStream[N_EXTRA],
-				l1ct::HadCaloObj puppiIn[NCALO]
-	){
+void packEG(l1ct::HadCaloObj pfselne[NNEUTRALS],
+			ap_uint<576> &link_out){
+	const ap_uint<8> BW = 64;
+	ap_uint<12> start = 0;
+	ap_uint<576> temp_link;
 
-	l1ct::HadCaloObj left;
-	l1ct::HadCaloObj right;
-
-	int idx_left = 0;
-	int idx_right = 0;
-
-	left = leftStream[idx_left];
-	right = rightStream[idx_right];
-
-	for(loop idx=0; idx<N_EXTRA; idx++) {
-		if(left.hwPt < right.hwPt){
-			puppiIn[NNEUTRALS+idx] = right;
-			idx_right = idx_right + 1;
-			right = rightStream[idx_right];
-		}
-		else {
-			puppiIn[NNEUTRALS+idx] = left;
-			idx_left = idx_left + 1;
-			left = leftStream[idx_left];
-		}
-	}
+	packEG_1_1:
+    for(loop idx=0; idx<8; idx++) {
+//    	std::cout << "EG pack : " << idx << " | " << pfselne[idx].pack() << std::endl;
+    	temp_link.range(start+(BW-1),start) = pfselne[idx].pack();
+//    	std::cout << "end : " << start+(BW-1) << " start : " << start << std::endl;
+        start = start + BW;
+    }
+    temp_link.range(575, 512) = 0;
+    link_out = temp_link;
 }
 
-void getInside(const ap_uint<576> &link,
-				const int &phi_offset,
-				const l1ct::PFRegion &region,
-				l1ct::HadCaloObj outstream[N_EXTRA]
-				){
-	ap_uint<576> word = link;
-	int count = 0;
+void packJets(jets Jets[9], ap_uint<576> &link_out){
+	const ap_uint<8> BW = 64;
+	ap_uint<12> start = 0;
+	ap_uint<576> temp_link;
 
-	for(loop j=0; j<N_PF_LINK; j++) {
-		ap_uint<8>  ETA = (word.range(16,12) - 12);
-		ap_int<9>   PHI = (word.range(24,17) - phi_offset);
+	packJets_1_1:
+    for(loop idx=0; idx<9; idx++) {
+//    	std::cout << "JETS pack : " << idx << " | " << Jets[idx].data() << std::endl;
+    	temp_link.range(start+(BW-1),start) = Jets[idx].data();
 
-		bool isInside = region.isInside(ETA, PHI);
-		if(isInside){
-			outstream[count].hwPt = word.range(11,0);
-			outstream[count].hwEta = ETA;
-			outstream[count].hwPhi = PHI;
-
-			count = count + 1;
-		}
-		if (count == N_EXTRA) break;
-		word=word>>64;
-	}
+        start = start + BW;
+    }
+    link_out = temp_link;
 }
 
 
-void algo_topIP1(
-    ap_uint<576> link_in[N_INPUT_LINKS],
-    ap_uint<576> link_out[N_OUTPUT_LINKS]
-    ) {
-#pragma HLS PIPELINE II=6
-#pragma HLS ARRAY_PARTITION variable=link_in complete dim=0
-#pragma HLS ARRAY_PARTITION variable=link_out complete dim=0
-#pragma HLS INTERFACE ap_ctrl_hs port=return
+void algo_topIP1(ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS], ap_uint<576> link_out[10])
+{
+    #pragma HLS PIPELINE II=9
+    #pragma HLS ARRAY_PARTITION variable=link_in type=complete
+    #pragma HLS ARRAY_PARTITION variable=link_out type=complete
+    #pragma HLS INTERFACE ap_ctrl_hs port=return
 
-	ap_uint<576> link_in_1[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in_1 complete dim=0
-	ap_uint<576> link_in_2[N_INPUT_LINKS];
-#pragma HLS ARRAY_PARTITION variable=link_in_2 complete dim=0
-	for(int idx=0; idx < N_INPUT_LINKS; idx++) {
-#pragma HLS UNROLL
-		link_in_1[idx] = link_in[idx];
-		link_in_2[idx] = link_in[idx];
+//	for(int link = 0 ; link < 10 ; link++){
+//		link_out[link] = 0;
+//	}
+
+
+	ap_uint<LINK_WIDTH> __link_in[N_INPUT_LINKS];
+#pragma HLS ARRAY_PARTITION variable=__link_in type=complete
+	algo_topIP1_1_1:
+	for(int link = 0 ; link < N_INPUT_LINKS ; link++){
+		__link_in[link] = link_in[link];
 	}
 
-    l1ct::PFRegion region[N_SECTORS];
-regions_init:
-    for(int i=0 ; i < N_SECTORS ; i++) {
-        region[i].hwEtaCenter = l1ct::glbeta_t(12);
-        region[i].hwEtaHalfWidth = l1ct::eta_t(12);
-        region[i].hwEtaExtra = l1ct::eta_t(0);
-        region[i].hwPhiExtra = l1ct::phi_t(2);
-        region[i].hwPhiHalfWidth = l1ct::phi_t(6);
-        region[i].hwPhiCenter = l1ct::glbphi_t(12*i+5);
+
+    jets Jets[9];
+    jets Taus[9];
+    #pragma HLS ARRAY_PARTITION variable=Jets type=complete
+    #pragma HLS ARRAY_PARTITION variable=Taus type=complete
+
+
+#ifndef __SYNTHESIS__
+
+    if(DEBUG_LEVEL > 0)
+    {
+        std::cout<<"# @@HFTowers | phi | tower_et_phi...\n";
+        std::cout<<"# @@HFSuperTowers | eta | tower_et_phi...\n";
+        std::cout<<"# @@Jets | nJet | jet.data()...\n";
+        std::cout<<"# @@Taus | nJet | jet.data()...\n";
+        std::cout<<"# @@CALOCLUSTER | link | pf_cluster.data() ...\n";
     }
 
-	ap_uint<3> left;
-	ap_uint<3> right;
+    if(DEBUG_LEVEL > 0)
+    {
+        hftower towerGrid[TOWERS_IN_ETA][TOWERS_IN_PHI/N_INPUT_LINKS];
+        for(int link = 0 ; link < N_INPUT_LINKS ; link++)
+        {
+            processInputLink(link_in[link], towerGrid);
+            for(loop phi=0; phi<TOWERS_IN_PHI/N_INPUT_LINKS; phi++)
+            {
+                std::cout<<"@@HFTowers | "<<link<<","<<phi<<" | ";
+                for(loop eta=0; eta<TOWERS_IN_ETA; eta++)
+                {
+                    std::cout<<std::setw(3)<<towerGrid[eta][phi].energy<<" | ";
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
+#endif
 
-	l1ct::HadCaloObj puppiIn[N_SECTORS][NCALO];
-	l1ct::PuppiObj pfselne[N_SECTORS][NNEUTRALS];
+    ap_fixed<32,16> Ex;
+	ap_fixed<32,16> Ey;
+	ap_uint<12> HT;
 
-    for(int idx=0; idx < N_SECTORS; idx++) {
-    	if (idx==0){
-    		left = 5;
-    	}
-    	else {
-    		left = idx-1;
-    	}
-    	if (idx==5){
-    		right = 0;
-    	}
-    	else {
-    		right = idx+1;
-    	}
+    makeCaloObjects(__link_in, Jets,Taus, Ex, Ey, HT);
 
-    	Regionizer(link_in[idx], link_in_1[left], link_in_2[right], idx, puppiIn[idx]);
+//    std::cout<<"JETS : \n";
+//    for(int i=0 ; i< 9 ; i++)
+//    {
+//        std::cout<< "ET : " << Jets[i].ET << "Eta : " << Jets[i].Eta << "Phi : " << Jets[i].Phi << std::endl;
+//    }
+//    std::cout<<"\n";
+
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 0)
+    {
+        std::cout<<"@@JETS | 9 | ";
+        for(int i=0 ; i< 9 ; i++)
+        {
+            std::cout<<Jets[i].data()<<" | ";
+        }
+        std::cout<<"\n";
+
+        std::cout<<"@@Taus | 9 | ";
+        for(int i=0 ; i< 9 ; i++)
+        {
+            std::cout<<Taus[i].data()<<" | ";
+        }
+        std::cout<<"\n";
+    }
+#endif
+
+    l1ct::HadCaloObj egClusters[9]; // TODO . rmove hardcoding
+#pragma HLS ARRAY_PARTITION variable=egClusters type=complete
+
+    l1ct::PuppiObj pfSelectedNutrals[N_SECTORS_PF][NNEUTRALS];
+#pragma HLS ARRAY_PARTITION variable=pfSelectedNutrals type=complete
+
+    ap_fixed<32,16> Ex_pu;
+	ap_fixed<32,16> Ey_pu;
+    
+    doPFClustringChain(link_in, egClusters , pfSelectedNutrals, Ex_pu, Ey_pu);
+
+
+    #ifndef __SYNTHESIS__
+           if(DEBUG_LEVEL > 0)
+           {
+                std::cout<<"@@EGClusters | " ;
+                for(int i=0;i < 9 ; i++)
+                {
+                    std::cout<<egClusters[i].hwPt<<","<<egClusters[i].hwEta<<","<<egClusters[i].hwPhi<<" | ";
+                    //std::cout<<egClusters[i].data()<<" | ";
+                }
+                std::cout<<"\n";
+          } 
+    #endif
+
+   
+#ifndef __SYNTHESIS__
+    if(DEBUG_LEVEL > 0)
+    {
+        for(int i=0; i < N_SECTORS_PF; i++ )
+        {
+            std::cout<<"@@PUPPI | "<< i<<" | ";
+            for(int j =0 ; j< NNEUTRALS ; j++)
+            {
+                std::cout<<pfSelectedNutrals[i][j].hwPt<<","<<pfSelectedNutrals[i][j].hwEta<<","<<pfSelectedNutrals[i][j].hwPhi<<","<<pfSelectedNutrals[i][j].hwPuppiW()<<" | ";
+                //std::cout<<pfSelectedNutrals[i][j].data()<<" | ";
+            }
+            std::cout<<"\n";
+        }
+    }
+#endif
+
+    ap_uint<576> temp_link[10];
+    for(int i=0; i < 10; i++ ){
+    	temp_link[i] = 0;
+    }
+
+    algo_topIP1_2_1:
+    for(int i=0; i < N_SECTORS_PF; i++ ){
+    	packPuppi(pfSelectedNutrals[i], temp_link[i]);
 	}
 
-    for(int i=0; i < N_SECTORS; i++) {
-    	fwdlinpuppi(region[i], puppiIn[i], pfselne[i]);
-    	pack(pfselne[i], link_out[i]);
-    }
+    packEG(egClusters, temp_link[6]);
+    packJets(Jets, temp_link[7]);
+    packJets(Taus, temp_link[8]);
+
+    temp_link[9].range(11,0) = ap_uint<12>(Ex);
+    temp_link[9].range(23,12) = ap_uint<12>(Ey);
+    temp_link[9].range(35,24) = ap_uint<12>(Ex_pu);
+    temp_link[9].range(47,36) = ap_uint<12>(Ey_pu);
+    temp_link[9].range(59,48) = HT;
+
+    sendOut(temp_link, link_out);
+
+
+//    std::cout << std::endl << "INSIDE:" << std::endl;
+//    for(loop i = 0; i < 10; i++){
+//    	std::cout << std::hex << (link_out[i]) << std::dec << std::endl;
+//    }
+//    std::cout << std::endl;
+
 }
-
-
 

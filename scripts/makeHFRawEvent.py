@@ -1,10 +1,12 @@
-import scipy as sp
+
+from scipy import stats
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-t","--tag"    , help="tag. output files will be saved as <tag>.links , <tag>.png" ,default="hf_raw")
+parser.add_argument("-m","--mode"    , help="Mode" ,default="m",choices=['m','l','s','e'])
 parser.add_argument("-s","--seed"   , help="Seed for the random number generator",type=int , default=799 )
 args = parser.parse_args()
 
@@ -13,7 +15,7 @@ np.random.seed(args.seed)
 
 def fillCluster(HF,Energy=30.0,width=0.8,verbose=10):
 
-    vals=sp.stats.norm.pdf(np.array([-2,-1,0,1,2])/width)/sp.stats.norm.pdf(0)
+    vals=stats.norm.pdf(np.array([-2,-1,0,1,2])/width)/stats.norm.pdf(0)
     en_dist=np.outer(vals,vals)
 
     selct_=np.random.random(25).reshape(5,5)
@@ -24,7 +26,7 @@ def fillCluster(HF,Energy=30.0,width=0.8,verbose=10):
     en_fraction=(en_fraction + en_fraction*np.random.normal(scale=0.05) )*Energy
     x0,y0=np.random.randint(11),np.random.randint(18*2)
     if verbose >0:
-        print("Adding cluster at ",x0,y0," of energy ",Energy)
+        print("Adding cluster at ",x0,y0,f" of energy {Energy:.2f}",f" and width {width:.3f}")
     if verbose >2:
         print("en_fraction\n",en_fraction)
     for i in range(-2,2+1):
@@ -89,13 +91,63 @@ def writeDescriptionFile(HF,ofname="output.csv"):
 HF=np.zeros(shape=(11,18*2))
 
 #########     CLUSTER ENERGY DEFINITION ############
-fillCluster(HF,Energy=380.0,width=0.8,verbose=1)
-fillCluster(HF,Energy=130.0,width=0.8,verbose=1)
-fillCluster(HF,Energy=20.0,width=3,verbose=1)
-fillCluster(HF,Energy=3.0,width=10,verbose=1)
-for et in [10.0,12,30,23,50,30,60]:
-    fillCluster(HF,Energy=et,width=2,verbose=1)
-    
+# fillCluster(HF,Energy=380.0,width=0.8,verbose=1)
+# fillCluster(HF,Energy=130.0,width=0.8,verbose=1)
+# fillCluster(HF,Energy=20.0,width=3,verbose=1)
+# fillCluster(HF,Energy=3.0,width=10,verbose=1)
+# for et in [10.0,12,30,23,50,30,60,230,66,55,160,90,887,32,42,221,128,453,2000,20,40,30]:
+#     fillCluster(HF,Energy=et,width=2,verbose=1)
+nPV_particle = 2
+nPU_particle = 4
+highEdepProb = 0.9
+if args.mode == 's':
+    nPV_particle=1
+    nPU_particle=2
+    highEdepProb=0.85
+if args.mode == 'm':
+    nPV_particle=2
+    nPU_particle=4
+    highEdepProb=0.9
+if args.mode == 'l':
+    nPV_particle=4
+    nPU_particle=8
+    highEdepProb=0.95
+if args.mode == 'e':
+    nPV_particle=10
+    nPU_particle=12
+    highEdepProb=0.2    
+
+
+if True:
+    # PV 1
+    nV = max(1, np.random.poisson(nPV_particle))
+    print(f"Adding {nV} PV clusters")
+    for i in range(nV):
+        energy=np.random.uniform(10, 150)
+        w = np.random.normal(0.50, 0.25)
+        while w < 0.3:
+            w = np.random.normal(0.5, 0.25)
+        fillCluster(HF, Energy=energy, width=w, verbose=1)
+    # PU 2
+    nV = max(2, np.random.poisson(nPU_particle))
+    print(f"Adding {nV} PU clusters")
+    for i in range(nV):
+        energy = np.random.uniform(10, 80)
+        w =  np.random.normal(2.0, 0.7)
+        while w < 2.0:
+            w = np.random.normal(2.0, 0.7)
+        fillCluster(HF, Energy=energy, width=w, verbose=1)
+
+if np.random.uniform() > highEdepProb:
+    nV = max(1, np.random.poisson(1))
+    print(f"Adding {nV} addtional high enrgy deposits")
+    for i in range(nV):
+        energy = np.random.uniform(100, 400)
+        w = max(2.0, np.random.normal(0.8, 0.3))
+        fillCluster(HF, Energy=energy, width=w, verbose=1)
+
+
+
 ####################################################
 
 
@@ -103,11 +155,11 @@ for et in [10.0,12,30,23,50,30,60]:
 f,ax=plt.subplots(figsize=(14,6))
 HF_toPlot=np.array(HF)
 HF_toPlot[HF_toPlot < 0.5 ] = np.inf
-cbar=ax.matshow(HF_toPlot,cmap='Reds',vmax=251,vmin=0.0)
+cbar=ax.matshow(HF_toPlot,cmap='Reds',vmax=251,vmin=0.0,origin='lower')
 _=ax.set_xticks(np.arange(0,36,2)-0.5,minor=False,labels=[])
 _=ax.set_xticks(np.arange(0,36,2)+0.5,minor=True,labels=np.arange(0,18))
 
-_=ax.set_yticks(np.arange(0,11,1),minor=True ,labels=np.arange(0,11,1)+30)
+_=ax.set_yticks(np.arange(0,11,1),minor=True ,labels=np.arange(0,11,1)) # +30
 _=ax.set_yticks(np.arange(-0.5,11,1),minor=False,labels=[])
 ax.grid(which='major',alpha=0.8)
 ax.grid(which='minor',axis='x',alpha=0.2)

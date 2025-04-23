@@ -6,6 +6,7 @@
 #include<string>
 #include <dirent.h>
 #include <unistd.h>
+#include <bitset>
 
 #define N_TEST_FILES 1
 
@@ -21,7 +22,7 @@ int main() {
     loop start, end ;
 
     ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS] ;
-    ap_uint<LINK_WIDTH> link_out[N_OUTPUT_LINKS] ;
+    ap_uint<576> link_out[6] ;
 
     std::string patternFile_dir = "../../../../../data/inputPatterFiles/";
 
@@ -37,8 +38,8 @@ int main() {
             continue;
 
         std::string file_path = patternFile_dir + entry->d_name;
-        std::cout << "File path: " << file_path << std::endl;	
-        
+        std::cout << "File path: " << file_path << std::endl;
+
 	std::ifstream read(file_path);
         if (!read.is_open()) {
             std::cout << "Error: Failed to open file " << file_path << std::endl;
@@ -70,21 +71,49 @@ int main() {
 
         algo_topIP1(link_in, link_out);
 
-        hftower HFTowers;
-	/*
-	std::cout<<"Output Towers ! \n";
-        for(loop i = 0; i < N_OUTPUT_LINKS; i++){
-        	for(loop j = 0; j < TOWERS_IN_ETA-1; j++){
-    			ap_uint<10> start =j*10;
-    			ap_uint<10> end = start+9;
-    			HFTowers.fillhftower(((ap_uint<10>) link_out[i].range(end, start))) ;
-    			cout << "  > tower  [ "
-    			 << " phi slice : " << i<<" | "<< " eta slice : "<<j<<" ] "
-			 <<" energy  :" <<  HFTowers.energy<< endl ;
-		}
-          }
-        */
+        std::cout << std::endl;
+        for(loop i = 0; i < 10; i++){
+        	std::cout << std::hex << (link_out[i]) << std::dec << std::endl;
+        }
+        std::cout << std::endl;
+
+        std::cout << std::endl;
+                for(loop i = 0; i < 10; i++){
+                	for(loop j = 0; j < 576; j++){
+                		std::cout << (link_out[i][j]);
+                	}
+                	std::cout << std::endl;
+                }
+		std::cout << std::endl;
+
+        for(loop i=0; i<6; i++) {
+        		ap_uint<12> start = 0;
+                for(loop k=0; k<N_PUPPI_LINK; k++) {
+                    l1ct::PuppiObj puppiOutObj = l1ct::PuppiObj::unpack(link_out[i].range(start+(63),start));
+                    start = start + 64 ;
+
+                    std::cout << "OUT : " << puppiOutObj.hwPt << ",";
+                    std::cout << puppiOutObj.hwEta << "," << puppiOutObj.hwPhi << "\n" << start << std::endl;
+
+                }
+            }
     }
+
+
+//	std::cout<<"Output Towers ! \n";
+//        for(loop i = 0; i < N_OUTPUT_LINKS; i++){
+//        	for(loop j = 0; j < TOWERS_IN_ETA-1; j++){
+//    			ap_uint<10> start =j*10;
+//    			ap_uint<10> end = start+9;
+//    			HFTowers.fillhftower(((ap_uint<10>) link_out[i].range(end, start))) ;
+//    			std::cout << "  > tower  [ "
+//    			 << " phi slice : " << i<<" | "<< " eta slice : "<<j<<" ] "
+//			 <<" energy  :" <<  HFTowers.energy<< std::endl ;
+//        	break;
+//		}
+//        	break;
+//          }
+//    }
 
     closedir(dir);
 

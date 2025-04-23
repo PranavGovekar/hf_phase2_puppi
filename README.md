@@ -1,34 +1,63 @@
-
 # HF_phase2_puppi
 This repo documents the developments towards adding HF to the Phase2 L1 Correlato
 
 ### Getting Started 
-Setup CMSSW as described in [correlator-common](https://gitlab.cern.ch/cms-cactus/phase2/firmware/correlator-common) 
-If you already have CMSSW setup elsewhere set ``PATH_CMSWS`` in scripts/build.tcl to its path 
 
-Run ``./run.sh``
+To build the project
+```bash
+git clone https://gitlab.cern.ch/pgovekar/hf_phase2_puppi.git
+cd hf_phase2_puppi
+git checkout clusterizer
+source /opt/Xilinx/Vivado/2022.1/settings64.sh
+./run.sh -build
+./run.sh -gui
 ```
-Usage: ./run.sh [OPTIONS]
-Options:
-  -init       Initialize Submodules
-  -build      Set up Project
-  -csim       Run C Simulation
-  -csyn       Run C Synthesis
-  -rsyn       Run RTL Synthesis
-  -impl       Run Implementation
-  -csimrp     View C Synthesis Report
-  -implrp     View Implementation Report
-  -axis       Build AXIS Wrapper
-  -zcu        Build AXIMM Wrapper
-
+Once Vitis HLS is launched:
+- Click on Open Project.
+- Then, click on Open. (current working directory is already set correctly)
+---
+## Usage
+```bash
+./run.sh [OPTIONS]
 ```
-Before running C Simulation make a directory named inputs ``mkdir inputs``  and place all you input files inside.
 
+### Options
+
+| **Option**  | **Description**                       |
+|-------------|---------------------------------------|
+| `-build`    | Set up the project environment.      |
+| `-csim`     | Run C simulation.                    |
+| `-csyn`     | Run C synthesis.                     |
+| `-rsyn`     | Run RTL synthesis.                   |
+| `-impl`     | Run FPGA implementation.             |
+| `-csimrp`   | View C synthesis report.             |
+| `-implrp`   | View implementation report.          |
+| `-axis`     | Build an AXI Stream (AXIS) wrapper.  |
+| `-zcu`      | Build an AXI Memory Mapped (AXIMM) wrapper. |
+| `-gui`      | Launch Vitis HLS project.	     |
+| `-gui_vivado`| Launch vivado project.              |
 
 ### Helper Scripts
+
+**Pattern File Generation**
 
 Generate HF pattern files with a customizable firing pattern. Please edit the files to customize the Et distribution of the clusters. For geenrating different configuration with a specific file , please change the seed of the generator by speciying it in the argument line through `-s`
 
 ```
 []$ python scripts/makeHFRawEvent.py  -s 799 -t hfV0
 ```
+**Valitation Plots**
+
+Dependancies : `numpy` , `matplotlib`
+Generates the plots for PF-Clusters,HFTowers,Jets in HF geometry.
+```
+# First pipe the CSIM output to a file.
+./run.sh  -csim | tee output.log
+
+# run the plotter v0
+python3 scripts/validateOutput.py  -i output.log -t v1
+# old
+python3 scripts/makeValidationPlots.py  -i output.log --tag v1
+
+```
+

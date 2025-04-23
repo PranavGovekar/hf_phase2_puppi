@@ -4,6 +4,6 @@ open_solution "csim_solution" -flow_target vivado
 #csim_design
 #csynth_design
 #cosim_design
-export_design -flow impl
+export_design -flow impl -rtl VHDL
 exit
 

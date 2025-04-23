@@ -16,7 +16,6 @@ void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]);
 void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]);
 void fwdlinpuppiPt(const HadCaloObj caloin[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]);
 
-
 inline int dr2_int_fw(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2) {
     ap_int<eta_t::width+1> deta = (eta1-eta2);
     ap_int<phi_t::width+1> dphi = (phi1-phi2);
@@ -255,7 +254,7 @@ void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]) {
 void fwdlinpuppiPt(const HadCaloObj caloin[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]) {
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=puppiPts complete
-    #pragma HLS pipeline II=2
+    #pragma HLS PIPELINE
 
     ap_uint<32> sums[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sums complete
@@ -362,7 +361,7 @@ void fwdlinpuppi(const PFRegion & region, const HadCaloObj caloin[NCALO], PuppiO
  #elif HLS_pipeline_II == 2
     #pragma HLS pipeline II=2
  #elif HLS_pipeline_II == 3
-    #pragma HLS pipeline II=3
+	#pragma HLS PIPELINE
  #elif HLS_pipeline_II == 4
     #pragma HLS pipeline II=4
  #elif HLS_pipeline_II == 6
