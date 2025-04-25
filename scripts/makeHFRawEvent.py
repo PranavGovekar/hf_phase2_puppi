@@ -167,13 +167,12 @@ plt.colorbar(cbar,fraction=0.015, pad=0.01)
 ax.set_xlabel('link',fontsize=12,loc='right')
 ax.set_ylabel('$I\eta$',fontsize=12,loc='top')
 ax.xaxis.set_ticks_position('bottom')
-ofname=f"{args.tag}_seed{args.seed}.png"
+ofname=f"{args.tag}_seed{args.seed}{args.mode}.png"
 print("exporting image ",ofname)
 f.savefig(ofname,bbox_inches='tight')
 
 
 link_strings=getLinkStrings(HF)
-writePatternFile([link_strings],f"{args.tag}_seed{args.seed}.links")
-
-writeDescriptionFile(HF,f"{args.tag}_seed{args.seed}.csv")
+writePatternFile([link_strings],f"{args.tag}_seed{args.seed}{args.mode}.links")
+writeDescriptionFile(HF,f"{args.tag}_seed{args.seed}{args.mode}.csv")
 
