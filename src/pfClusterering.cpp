@@ -93,12 +93,16 @@ void findMaxEnergyTowerInEta(const hftower EtaTowers[TOWERS_IN_ETA], hftower& et
 
 
 void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
-						hftower& maxTower)
+									ap_uint<5>& etaC,
+		                           ap_uint<8>& phiC,
+		                           ap_uint<10>& seedET)
 {
  	 #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete dim=0
 
 	hftower towersEta[12];
  #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
+
+	hftower maxTower;
 
 	findMaxEnergyTower_1_1:
 	for(loop eta = 0; eta < 12; eta++){
@@ -112,6 +116,9 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
 	}
 	findMaxEnergyTowerInEta(towersEta, maxTower);
 
+	etaC = maxTower.eta;
+	phiC = maxTower.phi;
+	seedET = maxTower.energy;
 
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL >7 )
@@ -125,8 +132,7 @@ void findMaxEnergyTower(const hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_
 void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR],
                            ap_uint<5> etaC,
                            ap_uint<8> phiC,
-                           ap_uint<12>& etSum,
-						   hftower HFRegion_out[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR]
+                           ap_uint<12>& etSum
 						  	  ) {
 
 #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete dim=0
@@ -177,9 +183,7 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
     for (ap_uint<5> i = 0; i < NTOWER_IN_ETA_PER_SECTOR; i++) {
     	formClusterAndZeroOut_4_2:
         for (ap_uint<8> j = 0; j < NTOWER_IN_PHI_PER_SECTOR; j++) {
-        	HFRegion_out[i][j].energy = HFRegion[i][j].energy * zero[i][j];
-        	HFRegion_out[i][j].eta = HFRegion[i][j].eta;
-			HFRegion_out[i][j].phi = HFRegion[i][j].phi;
+        	HFRegion[i][j].energy = HFRegion[i][j].energy * zero[i][j];
         }
     }
 
@@ -187,8 +191,8 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
 }
 
 void swap_1(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
     GreaterSmaller res;
 
     res = AscendDescend(Clusters_in[0], Clusters_in[1]);
@@ -205,8 +209,8 @@ void swap_1(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
 }
 
 void swap_2(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
     GreaterSmaller res;
 
     Clusters_out[0] = Clusters_in[0];
@@ -354,38 +358,28 @@ void makeCaloClusters (const ap_uint<LINK_WIDTH> regionLinks[LINKS_PER_REGION],
         ap_uint<8> phiC=0;
         ap_uint<5> etaC=0;
         ap_uint<12> etSum=0;
-        ap_uint<12> seedET=0;
-        hftower maxTower;
+        ap_uint<10> seedET=0;
 
-#define JUST_DO_IT(x) #x
-#define BECAUSE_IT_WORKS(x) JUST_DO_IT(x)
+        for (int i = 0; i < 6; i++) {
+            findMaxEnergyTower(HFRegion, etaC, phiC, seedET);
 
-#define CLUSTER_ITERATION(N, HF_IN, HF_OUT)                                     \
-    hftower HF_OUT[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_PHI_PER_SECTOR];        \
-    _Pragma(BECAUSE_IT_WORKS(HLS ARRAY_PARTITION variable=HF_OUT type=complete dim=0)) \
-    findMaxEnergyTower(HF_IN, maxTower);                                        \
-    if (maxTower.eta > 0 && maxTower.eta < 14 && maxTower.phi > 1 && maxTower.phi < 10) { \
-        if (maxTower.energy > MIN_CLUSTER_SEED_ENERGY) { \
-            formClusterAndZeroOut(HF_IN, maxTower.eta, maxTower.phi, etSum, HF_OUT); \
-            if (maxTower.phi > 3 && maxTower.phi < 8) {                         \
-                Clusters_in[N].Eta = maxTower.eta - 1;                          \
-                Clusters_in[N].Phi = (maxTower.phi + sector * 4) - 4;          \
-                Clusters_in[N].ET = etSum;                                     \
-                if (etSum == 2 * maxTower.energy) {                                     \
-                    EGClusters_in[N].Eta = maxTower.eta - 1;                   \
-                    EGClusters_in[N].Phi = (maxTower.phi + sector * 4) - 4;    \
-                    EGClusters_in[N].ET = etSum;                               \
-                }                                                              \
-            }                                                                  \
-        }                                                                      \
-    }
+            if (etaC > 0 && etaC < 14 && phiC > 1 && phiC < 10) {
+                if (seedET > MIN_CLUSTER_SEED_ENERGY) {
+                    formClusterAndZeroOut(HFRegion, etaC, phiC, etSum);
+                    if (phiC > 3 && phiC < 8) {
+                        Clusters_in[i].Eta = etaC - 1;
+                        Clusters_in[i].Phi = (phiC + sector * 4) - 4;
+                        Clusters_in[i].ET = etSum;
 
-	CLUSTER_ITERATION(0, HFRegion, HFRegion_1)
-	CLUSTER_ITERATION(1, HFRegion_1, HFRegion_2)
-	CLUSTER_ITERATION(2, HFRegion_2, HFRegion_3)
-	CLUSTER_ITERATION(3, HFRegion_3, HFRegion_4)
-	CLUSTER_ITERATION(4, HFRegion_4, HFRegion_5)
-	CLUSTER_ITERATION(5, HFRegion_5, HFRegion_6)
+                        if (etSum == 2 * seedET) {
+                            EGClusters_in[i].Eta = etaC - 1;
+                            EGClusters_in[i].Phi = (phiC + sector * 4) - 4;
+                            EGClusters_in[i].ET = etSum;
+                        }
+                    }
+                }
+            }
+        }
 
     sortPFcluster_6(EGClusters_in, EGClusters);
     sortPFcluster_6(Clusters_in, Clusters);

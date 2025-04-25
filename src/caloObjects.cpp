@@ -93,35 +93,29 @@ void unpackToSuperTowers(const ap_uint<LINK_WIDTH> link_in[11],
 #endif
 }
 
-void findMaxEnergySuperTowerInPhi(const hftower PhiTowers[24],
+void findMaxEnergySuperTowerInPhi(const hftower PhiTowers[14],
 							hftower& phiC) {
 #pragma HLS INLINE off
 
-	hftower tempArray_0[12];
-    #pragma HLS ARRAY_PARTITION variable=tempArray_0 type=complete
-	for(loop i=0; i < 12; i++){
-		tempArray_0[i] = bestOf2(PhiTowers[i*2], PhiTowers[(i*2)+1]);
+	hftower tempArray_0[7];
+	#pragma HLS ARRAY_PARTITION variable=tempArray_0 type=complete
+	for(loop i = 0; i < 7; i++) {
+		tempArray_0[i] = bestOf2(PhiTowers[2 * i], PhiTowers[2 * i + 1]);
 	}
 
-	hftower tempArray_1[6];
-    #pragma HLS ARRAY_PARTITION variable=tempArray_1 type=complete
-	for(loop i=0; i < 6; i++){
-		tempArray_1[i] = bestOf2(tempArray_0[i*2], tempArray_0[(i*2)+1]);
+	hftower tempArray_1[4];
+	#pragma HLS ARRAY_PARTITION variable=tempArray_1 type=complete
+	for(loop i = 0; i < 3; i++) {
+		tempArray_1[i] = bestOf2(tempArray_0[2 * i], tempArray_0[2 * i + 1]);
 	}
+	tempArray_1[3] = tempArray_0[6];
 
-	hftower tempArray_2[3];
-    #pragma HLS ARRAY_PARTITION variable=tempArray_2 type=complete
-	for(loop i=0; i < 3; i++){
-		tempArray_2[i] = bestOf2(tempArray_1[i*2], tempArray_1[(i*2)+1]);
-	}
+	hftower tempArray_2[2];
+	#pragma HLS ARRAY_PARTITION variable=tempArray_2 type=complete
+	tempArray_2[0] = bestOf2(tempArray_1[0], tempArray_1[1]);
+	tempArray_2[1] = bestOf2(tempArray_1[2], tempArray_1[3]);
 
-	hftower tempArray_3[2];
-    #pragma HLS ARRAY_PARTITION variable=tempArray_3 type=complete
-	tempArray_3[0] = tempArray_2[0];
-	tempArray_3[1] = bestOf2(tempArray_2[1], tempArray_2[2]);
-
-	phiC = bestOf2(tempArray_3[0], tempArray_3[1]);
-
+	phiC = bestOf2(tempArray_2[0], tempArray_2[1]);
 }
 
 
@@ -140,11 +134,12 @@ void findMaxEnergySuperTowerInEta(const hftower EtaTowers[4], hftower& etaC) {
 
 void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2],
                         ap_uint<5>& etaC,
-                        ap_uint<8>& phiC)
+                        ap_uint<8>& phiC,
+						ap_uint<10>& seedET)
 {
 //#pragma HLS INLINE
      #pragma HLS ARRAY_PARTITION variable=HFRegion type=complete dim=0
-	hftower towersPhi[24];
+	hftower towersPhi[14];
      #pragma HLS ARRAY_PARTITION variable=towersPhi type=complete
 	hftower tempPhi;
 
@@ -152,19 +147,20 @@ void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][((TOWER
     for(ap_uint<5> phi = 0; phi < 14; phi++)
     {
     	hftower towersEta[4];
-         #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
+        #pragma HLS ARRAY_PARTITION variable=towersEta type=complete
     	findMaxEnergySuperTower_1_2:
         for(loop eta = 1; eta < 5; eta++)
         {
             towersEta[eta-1] = HFRegion[eta][phi];
         }
-        findMaxEnergySuperTowerInEta(towersEta, towersPhi[phi-1]);
+        findMaxEnergySuperTowerInEta(towersEta, towersPhi[phi]);
     }
 
     findMaxEnergySuperTowerInPhi(towersPhi, tempPhi);
 
     etaC = tempPhi.eta+1;
     phiC = tempPhi.phi;
+    seedET = tempPhi.energy;
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL >7 )
     {
@@ -177,8 +173,7 @@ void findMaxEnergySuperTower(const hftower HFRegion[(TOWERS_IN_ETA/3)+2][((TOWER
 void formJetsAndZeroOut(hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2],
                         ap_uint<10> etaC,
                         ap_uint<10> phiC,
-                        ap_uint<18>& etSum,
-						hftower superTowers_out[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2]) {
+                        ap_uint<18>& etSum) {
 #pragma HLS ARRAY_PARTITION variable=superTowers type=complete dim=0
 
     ap_uint<1> mask[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2];
@@ -226,9 +221,7 @@ void formJetsAndZeroOut(hftower superTowers[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI
     for (ap_uint<10> i = 0; i < (TOWERS_IN_ETA / 3) + 2; i++) {
     	formJetsAndZeroOut_4_2:
         for (ap_uint<10> j = 0; j < (TOWERS_IN_PHI / 6) + 2; j++) {
-        	superTowers_out[i][j].energy = superTowers[i][j].energy * zero[i][j];
-        	superTowers_out[i][j].eta = superTowers[i][j].eta;
-			superTowers_out[i][j].phi = superTowers[i][j].phi;
+        	superTowers[i][j].energy = superTowers[i][j].energy * zero[i][j];
         }
     }
 
@@ -281,37 +274,28 @@ void makeJets(const ap_uint<LINK_WIDTH> link_in[11],
         ap_uint<8> phiC = 1;
         ap_uint<5> etaC = 1;
         ap_uint<18> etSum = 0;
-        hftower maxTower;
+        ap_uint<10> seedET = 0;
 
-#define JUST_DO_IT(x) #x
-#define BECAUSE_IT_WORKS(x) JUST_DO_IT(x)
+		for (int i = 0; i < 5; i++) {
+			findMaxEnergySuperTower(superTowers, etaC, phiC, seedET);
+			Jet[i].seedET = seedET;
 
-#define JET_ITTERATION(N, ST_IN, ST_OUT)                                                       \
-	 hftower ST_OUT[(TOWERS_IN_ETA/3)+2][((TOWERS_IN_PHI/3)/N_SECTORS_ST)+2];                   \
-		_Pragma(BECAUSE_IT_WORKS(HLS ARRAY_PARTITION variable=ST_OUT type=complete dim=0))    \
-		findMaxEnergySuperTower(ST_IN, etaC, phiC);                                                \
-		Jet[N].seedET = ST_IN[etaC][phiC].energy;                                                  \
-		if (etaC >= 0 && etaC <= 5 && phiC >= 0 && phiC <= 13) {                                       \
-			formJetsAndZeroOut(ST_IN, etaC, phiC, etSum, ST_OUT);                                  \
-			if(phiC > 0 && phiC < 13){																\
-				if (etSum == 0) {                                                                      \
-					Jet[N].ET = 0;                                                                     \
-					Jet[N].Eta = 0;                                                                    \
-					Jet[N].Phi = 0;                                                                    \
-				} else {                                                                               \
-					Jet[N].ET = etSum;                                                                 \
-					Jet[N].Eta = etaC - 1;                                                             \
-					Jet[N].Phi = phiC - 1 + (12 * sector);                                             \
-				}                                                                                      \
-			}																							\
+			if (etaC >= 0 && etaC <= 5 && phiC >= 0 && phiC <= 13) {
+				formJetsAndZeroOut(superTowers, etaC, phiC, etSum);
+
+				if (phiC > 0 && phiC < 13) {
+					if (etSum == 0) {
+						Jet[i].ET = 0;
+						Jet[i].Eta = 0;
+						Jet[i].Phi = 0;
+					} else {
+						Jet[i].ET = etSum;
+						Jet[i].Eta = etaC - 1;
+						Jet[i].Phi = phiC - 1 + (12 * sector);
+					}
+				}
+			}
 		}
-
-        JET_ITTERATION(0, superTowers, superTowers_1)
-        JET_ITTERATION(1, superTowers_1, superTowers_2)
-		JET_ITTERATION(2, superTowers_2, superTowers_3)
-		JET_ITTERATION(3, superTowers_3, superTowers_4)
-		JET_ITTERATION(4, superTowers_4, superTowers_5)
-
 #ifndef __SYNTHESIS__
     if(DEBUG_LEVEL > 2)
     {
@@ -378,8 +362,8 @@ void Exy(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
 
 void swap_1(const jets Jets_in[10], jets Jets_out[10]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
 	jetGreaterSmaller res;
 
     res = AscendDescend(Jets_in[0], Jets_in[1]);
@@ -404,8 +388,8 @@ void swap_1(const jets Jets_in[10], jets Jets_out[10]) {
 }
 
 void swap_2(const jets Jets_in[10], jets Jets_out[10]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
 	jetGreaterSmaller res;
 
     Jets_out[0] = Jets_in[0];
