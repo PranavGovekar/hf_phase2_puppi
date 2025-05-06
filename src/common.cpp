@@ -62,8 +62,8 @@ void processInputLink( ap_uint<LINK_WIDTH> link_in,
 }
 
 hftower  bestOf2(const hftower& ecaltp0, const hftower& ecaltp1) {
-//#pragma HLS INLINE off
-#pragma HLS latency min=1
+#pragma HLS INLINE off
+//#pragma HLS latency min=1
 
 	hftower x;
 	x = (ecaltp0.energy > ecaltp1.energy)?ecaltp0:ecaltp1;
@@ -71,8 +71,8 @@ hftower  bestOf2(const hftower& ecaltp0, const hftower& ecaltp1) {
 }
 
 PFcluster  bestOf2(const PFcluster& ecaltp0, const PFcluster& ecaltp1) {
-//#pragma HLS INLINE off
-#pragma HLS latency min=1
+#pragma HLS INLINE off
+//#pragma HLS latency min=1
 
 	PFcluster x;
 	x = (ecaltp0.ET > ecaltp1.ET)?ecaltp0:ecaltp1;

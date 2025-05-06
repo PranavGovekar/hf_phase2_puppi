@@ -191,8 +191,8 @@ void formClusterAndZeroOut(hftower HFRegion[NTOWER_IN_ETA_PER_SECTOR][NTOWER_IN_
 }
 
 void swap_1(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
-//#pragma HLS INLINE off
-#pragma HLS latency min=1
+#pragma HLS INLINE off
+//#pragma HLS latency min=1
     GreaterSmaller res;
 
     res = AscendDescend(Clusters_in[0], Clusters_in[1]);
@@ -209,8 +209,8 @@ void swap_1(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
 }
 
 void swap_2(const PFcluster Clusters_in[6], PFcluster Clusters_out[6]) {
-//#pragma HLS INLINE off
-#pragma HLS latency min=1
+#pragma HLS INLINE off
+//#pragma HLS latency min=1
     GreaterSmaller res;
 
     Clusters_out[0] = Clusters_in[0];
