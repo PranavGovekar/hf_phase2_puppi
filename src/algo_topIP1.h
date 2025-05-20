@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include "ap_int.h"
-#include "ap_utils.h"
 #include <algorithm>
 #include <utility>
 #include <stdint.h>

@@ -24,7 +24,7 @@ parser.add_argument( "--exportToJson", help="Export validation data to json", ac
 parser.add_argument(     "--pHFT" , help="Print HF tower grid" , action='store_true')
 parser.add_argument(     "--pST" , help="Print ST grid" , action='store_true')
 parser.add_argument('-p',"--doPlots" , help="make all plots" , action='store_true')
-parser.add_argument(     "--allObjects" , help="Print all objects" ,action='store_true' )
+parser.add_argument(     "--allObjects" , help="Print all objects" ,action='store_true')
 parser.add_argument( "-e", "--expandSector" , help="Expand the sector" , default=None)
 args = parser.parse_args()
 
@@ -34,7 +34,7 @@ sector=None
 if args.expandSector is not None:
     sector=int(args.expandSector)
 
-prefix='./'
+# prefix='./'
 tag=args.tag
 with open(args.inputFile) as f:
     txt=f.readlines()
@@ -99,6 +99,39 @@ for l in txt:
     sec  =int(items[2])
     up_overlap_per_sector[sec]=count
 
+
+## READ PUPPI CLUSTERS
+puppiClusters = []
+for l in txt:
+    l = l[:-1]
+    if not l.startswith('@@PUPPI'):
+        continue
+    items = l.split("|")
+    sector = int(items[1].strip())
+    for i in range(2, 10):
+        cluster_data = items[i].strip()
+        cluster = utl.unpackPuppiCluster(cluster_data)
+        if cluster is not None:
+            cluster['sector'] = sector
+            puppiClusters.append(cluster)
+
+## READ TRUE CLUSTERS
+trueClusters = []
+for l in txt:
+    l = l[:-1]
+    if not l.startswith('@@TrueClusters'):
+        continue
+    items = l.split("|")
+    cluster_data = items[1].strip()
+    cluster = utl.unpackTrueCluster(cluster_data)
+    if cluster is not None:
+        trueClusters.append(cluster)
+
+exportData["trueClusters"] = trueClusters
+print(f"Found {len(trueClusters)} True clusters")
+
+exportData["puppiClusters"] = puppiClusters
+print(f"Found {len(puppiClusters)} PUPPI clusters")
 
 ## CALO CLUSTERS CLOSURE CHECKS
 if args.pHFT:
@@ -456,7 +489,7 @@ if args.doPlots:
         axTrue.text(8.0,-9.0, f"{tag} " , bbox=dict(boxstyle="square",ec=None, fc='yellow'),fontsize=18)
         f.subplots_adjust(wspace=-0.5,hspace=-1.0)
         
-        foutname=f'{prefix}/stJets_{tag}.png'
+        foutname=f'./outputs/stJets/stJets_{tag}.png'
         print("Exporting : ",foutname)
         plt.savefig(foutname,bbox_inches='tight')
     ## CALO CLUSTER SUMMARY PLOT
@@ -552,7 +585,7 @@ if args.doPlots:
         
         f.subplots_adjust(wspace=-0.55,hspace=-1.0)
 
-        foutname=f'{prefix}/caloClusterSummary_{tag}.png'
+        foutname=f'./outputs/caloClusterSummary/caloClusterSummary_{tag}.png'
         print("Exporting : ",foutname)
         plt.savefig(foutname,bbox_inches='tight')
         # exit()
@@ -608,6 +641,102 @@ if args.doPlots:
             foutname=f'{prefix}/caloClusters_S{sector}_{tag}.png'
             print("Exporting : ",foutname)
             plt.savefig(foutname,bbox_inches='tight')
+
+## PUPPI POLT
+if True and (len(caloClusters) > 0 or len(trueClusters) > 0 or len(puppiClusters) > 0):
+    f = plt.figure(figsize=(36, 11.25), dpi=150)
+    gs = mpl.gridspec.GridSpec(1, 3, width_ratios=[1,1,1],
+                             wspace=-0.22,
+                             left=0.05, right=0.95,
+                             bottom=0.05, top=0.95)
+    
+    Rmax = max(eta_tow_map)
+    Rmin = min(eta_tow_map)
+    
+    axCalo = plt.subplot(gs[0])
+    axTrue = plt.subplot(gs[1])
+    axPuppi = plt.subplot(gs[2])
+    
+    for ax in [axCalo, axTrue, axPuppi]:
+        ax.set_axis_off()
+        ax.set(aspect=1)
+        ax.set_xlim(-1.1*Rmax, 1.1*Rmax)
+        ax.set_ylim(-1.1*Rmax, 1.1*Rmax)
+        utl.add_flushed_hf_towers(hf_tower_grid, ax)
+        utl.add_sector_overlay(ax, 18, Rmin-0.8, Rmax+0.8, color=(0,0,0,0.5))
+ 
+    v0 = max([cc['et'] for region in caloClusters for cc in region], default=1)
+    emaxJ = np.log2(v0) if v0 > 0 else 1
+    
+    for region in caloClusters:
+        for cc in region:
+            if cc['et'] > 0:
+                e = cc['eta']
+                p = cc['phi']
+                r = eta_tow_map[e+1]
+                ph = phi_tow_map[p]
+                x = 0.15 + np.log2(cc['et'])*(0.9-0.15)/emaxJ
+                w = mpatches.Wedge((0,0), r+1, ph-5+0.1, ph+10-0.7, 
+                                 width=3-0.2, ec="k", fc=cmap(x), alpha=0.5)
+                axCalo.add_artist(w)
+                axCalo.annotate(f"{cc['et']:.1f}", (0.4,0.4), 
+                               xycoords=w, fontsize=12)
+    
+    axCalo.text(-5.0, -0.25, f"Calo Clusters\n{sum(len(r) for r in caloClusters)}", fontsize=20)
+
+    emax_true = max([c['et'] for c in trueClusters], default=1)
+    emaxJ = np.log2(emax_true) if emax_true > 0 else 1
+    
+    pv_count = pu_count = 0
+    for cc in trueClusters:
+        if cc['et'] > 0:
+            e = cc['eta']
+            p = cc['phi']
+            r = eta_tow_map[e+1]
+            ph = phi_tow_map[p]
+            
+            if cc['type'] == 'PV':
+                x = 0.15 + np.log2(cc['et'])*(0.9-0.15)/emaxJ
+                color = cmap(x)
+                pv_count += 1
+            else:  # PU
+                color = (0.5, 0.7, 0.8, 0.5)
+                pu_count += 1
+            
+            w = mpatches.Wedge((0,0), r+1, ph-5+0.1, ph+10-0.7,
+                             width=3-0.2, ec="k", fc=color)
+            axTrue.add_artist(w)
+            axTrue.annotate(f"{cc['et']:.1f}", (0.4,0.4), 
+                           xycoords=w, fontsize=12)
+    
+    axTrue.text(-5.0, -0.25, f"True Clusters\nPV: {pv_count}, PU: {pu_count}", fontsize=20)
+    
+    emax_puppi = max([c['et'] for c in puppiClusters], default=1)
+    emaxJ = np.log2(emax_puppi) if emax_puppi > 0 else 1
+    
+    for cc in puppiClusters:
+        if cc['et'] > 0:
+            e = cc['eta']
+            p = cc['phi']
+            r = eta_tow_map[e+1]
+            ph = phi_tow_map[p]
+            x = 0.15 + np.log2(cc['et'])*(0.9-0.15)/emaxJ
+            w = mpatches.Wedge((0,0), r+1, ph-5+0.1, ph+10-0.7,
+                             width=3-0.2, ec="k", fc=cmap(x), alpha=0.5)
+            axPuppi.add_artist(w)
+            axPuppi.annotate(f"{cc['et']:.1f}", (0.4,0.4), 
+                           xycoords=w, fontsize=12)
+    
+    axPuppi.text(-5.0, -0.25, f"PUPPI Clusters\n{len(puppiClusters)}", fontsize=20)
+    
+    f.text(0.5, 0.02, f"{tag}", 
+         bbox=dict(boxstyle="square", ec=None, fc='yellow'),
+         fontsize=18, ha='center', va='bottom')
+    
+    print(f'Exporting : ./outputs/clusterSummary/clusterSummary_{tag}.png')
+    plt.savefig(f'./outputs/clusterSummary/clusterSummary_{tag}.png', bbox_inches='tight')
+
+
 if args.exportToJson:
     fname=f'validation_data_{args.tag}.json'
     with open(fname,'w') as f:
