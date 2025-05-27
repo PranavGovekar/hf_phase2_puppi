@@ -621,18 +621,26 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
     	int phi_offset_l;
     	int phi_offset_r;
+    	int left_sector;
+    	int right_sector;
 
     	if(sector == 0){
     		phi_offset_l = -72;
     		phi_offset_r = 0;
+    		left_sector = 5;
+    		right_sector = 1;
     	}
     	else if(sector == 5){
     		phi_offset_l = 0;
 			phi_offset_r = 72;
+    		left_sector = 4;
+    		right_sector = 0;
     	}
     	else{
     		phi_offset_l = 0;
 			phi_offset_r = 0;
+    		left_sector = sector-1;
+    		right_sector = sector+1;
     	}
 
 
@@ -642,8 +650,8 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     	int idx_left = 0;
     	int idx_right = 0;
 
-    	left = caloClusters[(sector*3)-1][idx_left];
-    	right = caloClusters[(sector*3)+3][idx_right];
+    	left = caloClusters[left_sector][idx_left];
+    	right = caloClusters[right_sector][idx_right];
 
     	for(loop idx=0; idx<4; idx++) {
     		if(left.ET < right.ET){
@@ -656,7 +664,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
     			pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
     			idx_right++;
-    			right = caloClusters[(sector*3)+3][idx_right];
+    			right = caloClusters[right_sector][idx_right];
     		}
     		else {
     			pfHadronicClusters[sector][12+idx].hwEta =
@@ -668,7 +676,7 @@ void doPFClustringChain( const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 				pfHadronicClusters[sector][12+idx].hwPt >>= 2;
 
     			idx_left++;
-    			left = caloClusters[(sector*3)-1][idx_left];
+    			left = caloClusters[left_sector][idx_left];
     		}
     	}
 
