@@ -362,8 +362,8 @@ void Exy(const ap_uint<LINK_WIDTH> link_in[N_INPUT_LINKS],
 
 
 void swap_1(const jets Jets_in[10], jets Jets_out[10]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
 	jetGreaterSmaller res;
 
     res = AscendDescend(Jets_in[0], Jets_in[1]);
@@ -388,8 +388,8 @@ void swap_1(const jets Jets_in[10], jets Jets_out[10]) {
 }
 
 void swap_2(const jets Jets_in[10], jets Jets_out[10]) {
-#pragma HLS INLINE off
-//#pragma HLS latency min=1
+//#pragma HLS INLINE off
+#pragma HLS latency min=1
 	jetGreaterSmaller res;
 
     Jets_out[0] = Jets_in[0];
