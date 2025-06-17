@@ -11,8 +11,8 @@ cd project
 open_project AXIS_Interface
 
 set_top AXIStream_wrapper
-add_files ${TOPDIR}/src/axisWrapper.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
-add_files ${TOPDIR}/src/axisWrapper.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
+add_files ${TOPDIR}/hls_wrappers/axisWrapper.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
+add_files ${TOPDIR}/hls_wrappers/axisWrapper.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
 add_files ${TOPDIR}/src/algo_topIP1.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src" 
 add_files ${TOPDIR}/src/algo_top_IP.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
 add_files ${TOPDIR}/correlator-common/puppi/firmware/linpuppi.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"

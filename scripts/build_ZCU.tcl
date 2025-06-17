@@ -11,8 +11,8 @@ cd project
 open_project ZCU_testing
 
 set_top ReadWrite
-add_files ${TOPDIR}/src/aximmWrapper.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
-add_files ${TOPDIR}/src/aximmWrapper.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
+add_files ${TOPDIR}/hls_wrappers/aximmWrapper.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
+add_files ${TOPDIR}/hls_wrappers/aximmWrapper.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
 add_files ${TOPDIR}/src/algo_topIP1.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src" 
 add_files ${TOPDIR}/src/algo_top_IP.cpp -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
 add_files ${TOPDIR}/correlator-common/puppi/firmware/linpuppi.h -cflags "-I$PATH_CMSWS -I${TOPDIR}/correlator-common/puppi/firmware -I${TOPDIR}/src"
